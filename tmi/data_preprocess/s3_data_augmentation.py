@@ -195,7 +195,6 @@ class TrajectoryAugmentation:
                     traj = class_trajs[idx]
                     
                     # 随机选择1-3种增强方法组合使用
-                    n_methods = np.random.randint(1, 5)
                     aug = deepcopy(traj)
                     
                     # 可用的增强方法列表
@@ -208,6 +207,7 @@ class TrajectoryAugmentation:
                         # TrajectoryAugmentation.swap_coords  # 交换坐标会导致经纬度超出范围，不合适
                     ]
                     
+                    n_methods = np.random.randint(1, len(methods) + 1)
                     # 随机选择并应用增强方法
                     selected_methods = np.random.choice(methods, n_methods, replace=False)
                     for method in selected_methods:
