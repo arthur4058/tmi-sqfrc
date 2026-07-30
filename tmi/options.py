@@ -137,7 +137,7 @@ class Options(object):
         self.parser.add_argument('--class_names', type=str, default="Walk,Bike,Bus,Car,Train",
                                   help='逗号分隔的类别名称列表，按索引顺序对应标签值')
         self.parser.add_argument('--noise_level_sweep', action='store_true',
-                                 help='在测试模式下遍历多个噪声级别(0%-100%)进行评估，并汇总结果')
+                                 help='在测试模式下遍历多个噪声级别(0%%-100%%)进行评估，并汇总结果')
         self.parser.add_argument('--sim_noise_sweep', action='store_true',
                                  help='在测试模式下遍历不同类型和档位的模拟噪声进行评估，并汇总结果')
 
