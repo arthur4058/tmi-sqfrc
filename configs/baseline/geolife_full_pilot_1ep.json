@@ -1,0 +1,28 @@
+{
+  "experiment_name": "geolife_upstream_full_pilot_1ep",
+  "task": "dual_branch_classification_from_scratch",
+  "data_name": "geolife",
+  "data_class": "trajectory_with_feature",
+  "output_dir": "./experiments/geolife_upstream_full_pilot_1ep",
+  "records_file": "./experiments/geolife_upstream_full_pilot_1ep/records.xlsx",
+  "epochs": 1,
+  "val_interval": 1,
+  "val_ratio": 0.1,
+  "batch_size": 64,
+  "lr": 0.001,
+  "optimizer": "RAdam",
+  "patience": 40,
+  "input_type": "50%noise",
+  "motion_features": [
+    3,
+    4,
+    5,
+    8
+  ],
+  "gpu": "0",
+  "num_workers": 0,
+  "seed": 10086,
+  "console": true,
+  "trajectory_branch_hyperparams": "feat_dim=2;max_len=200;d_model=64;n_heads=8;num_layers=4;dim_feedforward=256;dropout=0.1;pos_encoding=fixed;activation=gelu;norm=BatchNorm;freeze=false",
+  "feature_branch_hyperparams": "feat_dim=4;max_len=200;d_model=128;n_heads=16;num_layers=1;dim_feedforward=512;dropout=0.1;pos_encoding=learnable;activation=gelu;norm=LayerNorm;freeze=false"
+}
