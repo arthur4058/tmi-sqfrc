@@ -1,0 +1,6 @@
+name: tmi-sqfrc
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
