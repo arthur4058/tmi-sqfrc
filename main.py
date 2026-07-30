@@ -125,7 +125,7 @@ class TrainingPipeline:
                 n_splits=1,
                 validation_ratio=self.config['val_ratio'],
                 test_set_ratio=None,
-                test_indices=self.test_indices,
+                test_indices=None,
                 random_seed=10086,
                 labels=labels
             )
@@ -352,7 +352,7 @@ class TrainingPipeline:
             num_workers=self.config['num_workers'],
             pin_memory=True,
             collate_fn=self.collate_fn,
-            persistent_workers=True
+            persistent_workers=self.config['num_workers'] > 0
         )
 
         # 会有bug，不同任务datasetclass还不一样！
