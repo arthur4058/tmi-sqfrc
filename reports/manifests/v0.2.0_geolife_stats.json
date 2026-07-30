@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "release": "v0.2.0-data",
+  "dataset": {
+    "name": "Microsoft GeoLife Trajectories 1.3",
+    "archive": "Geolife Trajectories 1.3.zip",
+    "archive_sha256": "1107c5ac064d0a23c8d021a8736a77e53abc75b227062e6260342c6a8d86bdb6",
+    "source": "https://www.microsoft.com/en-us/research/project/geolife-building-social-networks-using-human-location-history/downloads/",
+    "users": 182,
+    "labeled_users": 69,
+    "plt_files": 18670
+  },
+  "protocol": {
+    "name": "upstream-random",
+    "purpose": "Upstream baseline reproduction",
+    "preprocessing_code_commit": "af66560016e5a2c62ff51ab8ecd5624f1024fa06",
+    "validation_code_commit": "8e9cd41f98816862c5b9724721310e80f1d021c9",
+    "mode_mapping": {
+      "0": "walk",
+      "1": "bike",
+      "2": "bus",
+      "3": "car+taxi",
+      "4": "subway+train"
+    }
+  },
+  "s1_extraction": {
+    "shuffle_seed": 10086,
+    "trajectories": 14686,
+    "empty_trajectories": 5097,
+    "class_counts": [6460, 2089, 2853, 2172, 1112],
+    "disk_size": "127M"
+  },
+  "s2_split": {
+    "method": "trajectory-level stratified random split",
+    "random_state": 42,
+    "test_ratio": 0.2,
+    "train_samples": 11748,
+    "test_samples": 2938,
+    "train_class_counts": [5168, 1671, 2282, 1737, 890],
+    "test_class_counts": [1292, 418, 571, 435, 222],
+    "train_empty_trajectories": 4043,
+    "test_empty_trajectories": 1054,
+    "disk_size": "127M"
+  },
+  "s3_augmentation": {
+    "random_seed": 42,
+    "train_samples": 25840,
+    "samples_per_class": 5168,
+    "test_samples": 2938,
+    "disk_size": "241M"
+  },
+  "s4_features": {
+    "min_points": 10,
+    "max_points": 200,
+    "mask_mode": "ep",
+    "trajectory_mask_mode": "kde",
+    "mask_ratio": 0.3,
+    "kde_bandwidth": 1,
+    "kde_kernel": "epa",
+    "train_segments": 43546,
+    "test_segments": 5321,
+    "train_class_counts": [7273, 9761, 10426, 8184, 7902],
+    "test_class_counts": [1856, 908, 1241, 836, 480],
+    "trajectory_dimensions": 2,
+    "motion_feature_dimensions": 10,
+    "disk_size": "2.1G"
+  },
+  "smoke_test": {
+    "train_pool_samples": 320,
+    "training_samples": 256,
+    "validation_samples": 64,
+    "test_samples": 160,
+    "epochs": 2,
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "test_accuracy": 0.61875,
+    "status": "passed"
+  },
+  "checksums": "reports/manifests/v0.2.0_geolife_sha256.txt",
+  "limitations": [
+    "This is the upstream trajectory-random protocol, not a user-disjoint protocol.",
+    "The s1 artifacts do not retain user IDs.",
+    "Empty labeled intervals are retained by s1 and removed later by s4.",
+    "The s4 upstream script shuffles without an explicit fixed seed; the checksum file identifies the exact generated artifacts.",
+    "These artifacts must not be used as the user-disjoint protocol for variable-sampling paper experiments."
+  ]
+}
