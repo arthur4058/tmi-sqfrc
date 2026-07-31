@@ -157,7 +157,7 @@ class Options(object):
 
         args.motion_features = [int(item) for item in args.motion_features.split(',')]
         
-        args.key_metric = 'accuracy' if 'classification' in args.task else 'loss'
+        args.key_metric = None
         
         # 处理类别名称
         if args.class_names is not None:

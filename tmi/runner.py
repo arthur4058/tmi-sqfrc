@@ -75,6 +75,10 @@ def setup(args):
             logger.critical("Failed to load configuration file. Check JSON syntax and verify that files exist")
             traceback.print_exc()
             sys.exit(1)
+    task = config.get('task')
+    if task is None:
+        raise ValueError("必须通过 --task 或配置文件提供 task")
+    config['key_metric'] = 'accuracy' if 'classification' in task else 'loss'
 
     # Create output directory
     initial_timestamp = datetime.now()

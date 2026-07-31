@@ -655,6 +655,17 @@ class TrainingPipeline:
             epoch_start_time = time.time()
             aggr_metrics_train = trainer.train_epoch(epoch)
             epoch_runtime = time.time() - epoch_start_time
+            nonfinite_train_metrics = {
+                name: value
+                for name, value in aggr_metrics_train.items()
+                if name != 'epoch' and not np.isfinite(value)
+            }
+            if nonfinite_train_metrics:
+                logger.error(
+                    f"Epoch {epoch} 出现非有限训练指标: "
+                    f"{nonfinite_train_metrics}。停止训练并保留上一个有效 checkpoint"
+                )
+                break
             
             # 记录训练指标
             print_str = 'Epoch {} Training Summary: '.format(epoch)

@@ -53,6 +53,14 @@ class EarlyStopping:
             # 对于accuracy，转为负值使其与loss保持一致(越小越好)
             val_metric = -val_metric if self.monitor_on == 'accuracy' else val_metric
             score = -val_metric  # 转换为越大越好
+
+        if not np.isfinite(val_metric):
+            self.early_stop = True
+            logger.error(
+                f"EarlyStopping 收到非有限的 {self.monitor_on} 指标 "
+                f"({val_metric})，立即停止训练"
+            )
+            return self
             
         # 早停逻辑
         if self.best_score is None:
@@ -73,4 +81,3 @@ class EarlyStopping:
                 logger.info(f'EarlyStopping: 发现更好的性能，重置计数器。新最佳分数: {-score if self.monitor_on == "accuracy" else score}')
                 
         return self
-
