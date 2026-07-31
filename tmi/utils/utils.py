@@ -118,7 +118,11 @@ def load_dual_branch_model(model, model_path, optimizer=None, resume=False):
     start_epoch = 0
     
     # 加载模型文件
-    checkpoint = torch.load(model_path, map_location=lambda storage, loc: storage)
+    checkpoint = torch.load(
+        model_path,
+        map_location=lambda storage, loc: storage,
+        weights_only=True,
+    )
     
     # 验证模型结构
     from tmi.models.models import DualTSTransformerEncoderClassifier, TSTransformerEncoderForDualBranch
@@ -199,7 +203,11 @@ def load_model(model, model_path, optimizer=None, resume=False, change_output=Fa
                lr=None, lr_step=None, lr_factor=None):
     logger.info(f'load model: {model_path}, change output: {change_output}')
     start_epoch = 0
-    checkpoint = torch.load(model_path, map_location=lambda storage, loc: storage)
+    checkpoint = torch.load(
+        model_path,
+        map_location=lambda storage, loc: storage,
+        weights_only=True,
+    )
     state_dict = deepcopy(checkpoint['state_dict'])
     if change_output:
         for key, val in checkpoint['state_dict'].items():
