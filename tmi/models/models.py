@@ -846,8 +846,10 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         feature_output = self.feature_branch(X2, padding_mask2)  # (batch_size, seq_len*d_model)
         
         # 重塑特征为三维张量，用于后续处理
-        trajectory_output = trajectory_output.view(batch_size, self.trajectory_max_len, self.trajectory_d_model)
-        feature_output = feature_output.view(batch_size, self.feature_max_len, self.feature_d_model)
+        trajectory_output = trajectory_output.view(
+            batch_size, X1.size(1), self.trajectory_d_model)
+        feature_output = feature_output.view(
+            batch_size, X2.size(1), self.feature_d_model)
         
         # 在特征维度上拼接
         combined_output = torch.cat([trajectory_output, feature_output], dim=2)

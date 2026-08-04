@@ -7,6 +7,48 @@ import numpy as np
 import pandas as pd
 from multiprocessing import Pool, cpu_count
 
+
+def _as_object_sequence_matrix(values, channels):
+    """Return (samples, channels) with one sequence stored in each cell.
+
+    NumPy expands a collection of equal-length sequences into a dense 3-D
+    array, while the upstream loader assumes a 2-D object array.  Both
+    representations contain the same values, so normalize only their storage
+    layout here.
+    """
+    if values.ndim == 2 and values.shape[1] == channels:
+        return values
+
+    if channels == 1 and values.ndim == 1:
+        return values.reshape(-1, 1)
+
+    def numeric_sequence(sequence):
+        sequence = np.asarray(sequence)
+        if sequence.dtype == object:
+            sequence = np.asarray(sequence.tolist())
+        return sequence
+
+    if values.ndim == 3 and values.shape[1] == channels:
+        matrix = np.empty(values.shape[:2], dtype=object)
+        for sample_index in range(values.shape[0]):
+            for channel_index in range(values.shape[1]):
+                matrix[sample_index, channel_index] = numeric_sequence(
+                    values[sample_index, channel_index]
+                )
+        return matrix
+
+    if channels == 1 and values.ndim == 2:
+        matrix = np.empty((values.shape[0], 1), dtype=object)
+        for sample_index in range(values.shape[0]):
+            matrix[sample_index, 0] = numeric_sequence(values[sample_index])
+        return matrix
+
+    raise ValueError(
+        "Unsupported sequence-array shape "
+        f"{values.shape}; expected {channels} channel(s)"
+    )
+
+
 class Normalizer(object):
     """
     Normalizes dataframe across ALL contained rows (time steps). Different from per-sample normalization.
@@ -159,10 +201,16 @@ class FeatureData(object):
         else:
             noise_multi_feature_segs_np = np.load(os.path.join(base_dir, 'noise_multi_feature_segs.npy'),
                                                   allow_pickle=True)
+            noise_multi_feature_segs_np = _as_object_sequence_matrix(
+                noise_multi_feature_segs_np, channels=10
+            )
             noise_multi_feature_seg_labels_np = np.load(
                 os.path.join(base_dir, 'noise_multi_feature_seg_labels.npy'))
             noise_multi_feature_segs = pd.DataFrame(noise_multi_feature_segs_np)
             fs_seg_masks_np = np.load(os.path.join(base_dir, 'fs_seg_masks.npy'), allow_pickle=True)
+            fs_seg_masks_np = _as_object_sequence_matrix(
+                fs_seg_masks_np, channels=9
+            )
 
             # deprecated
             # fs_seg_masks_np = np.array(
@@ -174,6 +222,9 @@ class FeatureData(object):
             labels_df = pd.DataFrame(noise_multi_feature_seg_labels_np)
             clean_multi_feature_segs_np = np.load(os.path.join(base_dir, 'clean_multi_feature_segs.npy'),
                                                   allow_pickle=True)
+            clean_multi_feature_segs_np = _as_object_sequence_matrix(
+                clean_multi_feature_segs_np, channels=10
+            )
             clean_multi_feature_segs = pd.DataFrame(clean_multi_feature_segs_np)
 
             lengths = noise_multi_feature_segs.applymap(lambda x: len(x)).values
@@ -280,6 +331,15 @@ class TrajectoryData(object):
             noise_trj_segs_np = np.load(os.path.join(base_dir, 'noise_trj_segs.npy'), allow_pickle=True)
             clean_trj_segs_np = np.load(os.path.join(base_dir, 'clean_trj_segs.npy'), allow_pickle=True)
             trj_seg_masks_np = np.load(os.path.join(base_dir, 'trj_seg_masks.npy'), allow_pickle=True)
+            noise_trj_segs_np = _as_object_sequence_matrix(
+                noise_trj_segs_np, channels=2
+            )
+            clean_trj_segs_np = _as_object_sequence_matrix(
+                clean_trj_segs_np, channels=2
+            )
+            trj_seg_masks_np = _as_object_sequence_matrix(
+                trj_seg_masks_np, channels=1
+            )
 
             # duplicate for lon and lat, note it is used for the condition of
             # `generate a mask seg by considering lat and lon SIMULTANEOUSLY`

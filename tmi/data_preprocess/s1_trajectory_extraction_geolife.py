@@ -48,7 +48,7 @@ def apply_labels(points, labels):
 
 
 # modified
-def read_user(user_folder):
+def read_user(user_folder, user_id):
     labels_details = None
 
     plt_files = glob.glob(os.path.join(user_folder, 'Trajectory', '*.plt'))
@@ -58,7 +58,7 @@ def read_user(user_folder):
     labels_file = os.path.join(user_folder, 'labels.txt')
     if os.path.exists(labels_file):
         labels_details = read_labels(labels_file)
-        extract_trjs_with_labels(points, labels_details)
+        extract_trjs_with_labels(points, labels_details, user_id)
     else:
         points['label'] = 0
 
@@ -66,7 +66,7 @@ def read_user(user_folder):
 
 
 # my code
-def extract_trjs_with_labels(points, labels_details):
+def extract_trjs_with_labels(points, labels_details, user_id):
     points['time'] = points['time'].apply(datatime_to_timestamp)
     # seconds
     labels_details['start_time'] = labels_details['start_time'].apply(datatime_to_timestamp)
@@ -79,20 +79,24 @@ def extract_trjs_with_labels(points, labels_details):
         et = label_detail['end_time']
         trj = points[(points['time'] >= st) & (points['time'] <= et)]
 
-        trj = trj[['time', 'lat', 'lon']].values
+        trj = trj[['time', 'lat', 'lon']].dropna().sort_values('time')
+        trj = trj.drop_duplicates(subset='time').values
+        if len(trj) < min_points:
+            continue
         trjs.append(trj)
         trjs_labels.append(label)
+        trjs_user_ids.append(user_id)
+        trjs_source_ids.append(f'{user_id:03d}:{int(st)}:{int(et)}:{idx}')
 
 
 def read_all_users(folder):
-    subfolders = os.listdir(folder)
-    dfs = []
+    subfolders = sorted(
+        sf for sf in os.listdir(folder)
+        if os.path.isdir(os.path.join(folder, sf))
+    )
     for i, sf in enumerate(subfolders):
         print('[%d/%d] processing user %s' % (i + 1, len(subfolders), sf))
-        df = read_user(os.path.join(folder, sf))
-        df['user'] = int(sf)
-        dfs.append(df)
-    return pd.concat(dfs)
+        read_user(os.path.join(folder, sf), int(sf))
 
 
 if __name__ == '__main__':
@@ -100,6 +104,8 @@ if __name__ == '__main__':
     parser.add_argument('--use_modes', type=str, default='0,1,2,3,4')
     parser.add_argument('--data_dir', type=str, default='/mnt/f/tmi-code/DATASET/Geolife Trajectories 1.3-Raw-All/Geolife Trajectories 1.3/Data')
     parser.add_argument('--save_dir', type=str, default='../../data/geolife_extracted/')
+    parser.add_argument('--min_points', type=int, default=2,
+                        help='Discard labeled intervals with fewer points.')
 
     args = parser.parse_args()
 
@@ -119,15 +125,20 @@ if __name__ == '__main__':
 
     use_modes = [int(item) for item in args.use_modes.split(',')]
     print('modes to use:', use_modes)
-
+    min_points = args.min_points
 
     trjs = []
     trjs_labels = []
-    df = read_all_users(args.data_dir)
+    trjs_user_ids = []
+    trjs_source_ids = []
+    read_all_users(args.data_dir)
     trjs = np.array(trjs, dtype=object)
     labels = np.array(trjs_labels)
+    user_ids = np.array(trjs_user_ids, dtype=np.int16)
+    source_ids = np.array(trjs_source_ids)
 
-    trjs, labels = shuffle(trjs, labels, random_state=10086)  # note: shuffles here !!
+    trjs, labels, user_ids, source_ids = shuffle(
+        trjs, labels, user_ids, source_ids, random_state=10086)
 
     print('saving files...')
     if not os.path.exists(args.save_dir):
@@ -135,3 +146,5 @@ if __name__ == '__main__':
 
     np.save(f'{args.save_dir}trjs.npy', trjs)
     np.save(f'{args.save_dir}labels.npy', labels)
+    np.save(f'{args.save_dir}user_ids.npy', user_ids)
+    np.save(f'{args.save_dir}source_ids.npy', source_ids)

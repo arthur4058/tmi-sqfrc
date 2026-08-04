@@ -24,6 +24,7 @@ define stay time as 20min
 """
 MAX_STAY_TIME_INTERVAL = 60 * 20
 MIN_N_POINTS = 10
+DISABLE_PERCENTILE_FILTER = False
 MAX_N_POINTS = 200  # TODO
 
 """
@@ -48,6 +49,13 @@ LIKELY_TURN_ANGLE_THRESHOLD = 90  # degree
 MIN_MASK_SEG_LEN = 1  #  TODO 
 
 
+def initialize_worker(base_seed):
+    """Give each S4 worker a stable, distinct NumPy random stream."""
+    identity = multiprocessing.current_process()._identity
+    worker_index = identity[0] if identity else 0
+    np.random.seed(base_seed + worker_index)
+
+
 def filter_error_gps_data(trjs, labels, pool, n_threads):
     logger.info('filter_error_gps_data...')
     tasks = []
@@ -59,6 +67,12 @@ def filter_error_gps_data(trjs, labels, pool, n_threads):
     res = np.array([[t.get()[0], t.get()[1]] for t in tasks], dtype=object)
     trjs = np.concatenate(res[:, 0])
     labels = np.concatenate(res[:, 1])
+
+    # Sparse benchmark views must stay paired across sampling conditions.
+    # The optional switch skips this dataset-level endpoint deletion while
+    # retaining all per-trajectory validity and speed checks above.
+    if DISABLE_PERCENTILE_FILTER:
+        return np.array(trjs, dtype=object), np.array(labels, dtype=np.int32)
 
     # filter out lat and lng whose values not in 1th ~ 99th percentile
     trjs_stack = np.vstack(trjs)[:, [1, 2]]  # keep lat, lng
@@ -413,11 +427,6 @@ if __name__ == '__main__':
 
     t_start = time.time()
 
-    # n_threads = multiprocessing.cpu_count()
-    n_threads = 24
-    pool = multiprocessing.Pool(processes=n_threads)
-    logger.info(f'n_thread:{n_threads}')
-
     parser = argparse.ArgumentParser(description='TRJ_SEG_FEATURE')
     parser.add_argument('--trjs_path', type=str, required=True)
     parser.add_argument('--labels_path', type=str, required=True)
@@ -430,8 +439,27 @@ if __name__ == '__main__':
     parser.add_argument('--trj_mask_mode', type=str, default='kde', choices=['kde', 'random'], help='轨迹掩码模式：kde为密度估计，random为随机掩码')
     parser.add_argument('--kde_bw', type=float, default=1, help='bandwidth parameter for FFTKDE')
     parser.add_argument('--kde_kernel', type=str, default='epa', help='kernel type for FFTKDE (e.g., epa, gaussian)')
+    parser.add_argument(
+        '--min_n_points', type=int, default=10,
+        help='Minimum number of feature deltas. Default preserves upstream behavior.')
+    parser.add_argument(
+        '--disable_percentile_filter', action='store_true',
+        help='Keep valid GPS endpoints so paired sparse views remain aligned.')
+    parser.add_argument('--seed', type=int, default=42)
 
     args = parser.parse_args()
+    MIN_N_POINTS = args.min_n_points
+    DISABLE_PERCENTILE_FILTER = args.disable_percentile_filter
+    np.random.seed(args.seed)
+
+    # Workers must be created after protocol globals are configured so forked
+    # processes inherit the requested sparse-sequence settings.
+    n_threads = 24
+    pool = multiprocessing.Pool(
+        processes=n_threads,
+        initializer=initialize_worker,
+        initargs=(args.seed,))
+    logger.info(f'n_thread:{n_threads}')
 
     # raw data
     trjs = np.load(args.trjs_path, allow_pickle=True)

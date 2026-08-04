@@ -6,6 +6,7 @@ import pickle
 import logging
 import argparse
 import datetime
+import random
 
 import numpy as np
 import pandas as pd
@@ -66,7 +67,12 @@ class TrainingPipeline:
         
         # 设置随机种子
         if self.config['seed'] is not None:
+            random.seed(self.config['seed'])
+            np.random.seed(self.config['seed'])
             torch.manual_seed(self.config['seed'])
+            torch.cuda.manual_seed_all(self.config['seed'])
+            cudnn.benchmark = False
+            cudnn.deterministic = True
             
         # 设置设备
         self._setup_device()
@@ -102,36 +108,46 @@ class TrainingPipeline:
         
         # 1. 加载数据
         data_class = data_factory[self.config['data_class']]
-        self.train_data = data_class(limit_size=self.config['limit_size'], config=self.config, data_split='train')
-        self.test_data = data_class(limit_size=self.config['limit_size'], config=self.config, data_split='test')
-        
-        # 确定验证方法
-        if 'classification' in self.config['task']:
-            validation_method = 'ShuffleSplit'
-            labels = self.train_data.labels_df.values.flatten()
-        else:
-            validation_method = 'ShuffleSplit'
-            labels = None
+        train_config = dict(self.config)
+        train_config['data_name'] = self.config.get('train_data_name', self.config['data_name'])
+        test_config = dict(self.config)
+        test_config['data_name'] = self.config.get('test_data_name', self.config['data_name'])
+        self.train_data = data_class(
+            limit_size=self.config['limit_size'], config=train_config, data_split='train')
+        self.test_data = data_class(
+            limit_size=self.config['limit_size'], config=test_config, data_split='test')
 
         # 2. 分割数据集
         self.test_indices = self.test_data.all_IDs
-        self.val_data = self.train_data  # 会被val_indices过滤
-        self.val_indices = []
+        if self.config.get('use_separate_val', False):
+            val_config = dict(self.config)
+            val_config['data_name'] = self.config.get('val_data_name', self.config['data_name'])
+            self.val_data = data_class(
+                limit_size=self.config['limit_size'], config=val_config, data_split='val')
+            self.train_indices = self.train_data.all_IDs
+            self.val_indices = self.val_data.all_IDs
+        else:
+            self.val_data = self.train_data  # 会被val_indices过滤
+            self.val_indices = []
 
-        if self.config['val_ratio'] > 0:
+        if not self.config.get('use_separate_val', False) and self.config['val_ratio'] > 0:
+            if 'classification' in self.config['task']:
+                labels = self.train_data.labels_df.values.flatten()
+            else:
+                labels = None
             self.train_indices, self.val_indices, _ = split_dataset(
                 data_indices=self.train_data.all_IDs,
-                validation_method=validation_method,
+                validation_method='ShuffleSplit',
                 n_splits=1,
                 validation_ratio=self.config['val_ratio'],
                 test_set_ratio=None,
                 test_indices=None,
-                random_seed=10086,
+                random_seed=self.config.get('seed', 10086),
                 labels=labels
             )
             self.train_indices = self.train_indices[0]
             self.val_indices = self.val_indices[0]
-        else:
+        elif not self.config.get('use_separate_val', False):
             self.train_indices = self.train_data.all_IDs
             if self.test_indices is None:
                 self.test_indices = []
@@ -166,13 +182,18 @@ class TrainingPipeline:
     def _preprocess_features(self):
          # 为每个特征分支保存一个与训练集统计量绑定的 Normalizer
          self.feature_normalizers = []
-         for (train_df, train_normalization), (test_df, test_normalization) in zip(
-                self.train_data.feature_dfs, self.test_data.feature_dfs):
+         for branch_index, ((train_df, train_normalization),
+                            (test_df, test_normalization)) in enumerate(zip(
+                                self.train_data.feature_dfs,
+                                self.test_data.feature_dfs)):
             normalizer = Normalizer(train_normalization)
-            # 先在训练集上拟合并变换（写回训练与验证分片）
+            # 只在训练集上拟合，验证集和测试集复用训练统计量。
             train_df.loc[self.train_indices] = normalizer.normalize(train_df.loc[self.train_indices])
-            if len(self.val_indices):
+            if self.val_data is self.train_data and len(self.val_indices):
                 train_df.loc[self.val_indices] = normalizer.normalize(train_df.loc[self.val_indices])
+            elif len(self.val_indices):
+                val_df = self.val_data.feature_dfs[branch_index][0]
+                val_df.loc[self.val_indices] = normalizer.normalize(val_df.loc[self.val_indices])
             # 用相同统计量变换当前测试集
             test_df.loc[self.test_indices] = normalizer.normalize(test_df.loc[self.test_indices])
             # 保存该分支的 normalizer（已携带训练统计量）
@@ -613,11 +634,15 @@ class TrainingPipeline:
         best_value = 1e16 if self.config['key_metric'] in NEG_METRICS else -1e16
         metrics = []  # 存储每个epoch的验证指标
         best_metrics = {}
+        has_validation = (
+            self.config.get('use_separate_val', False)
+            or self.config['val_ratio'] > 0
+        )
         
         # 在训练前先评估验证集
         aggr_metrics_val = None
         metrics_names = None
-        if self.config['val_ratio'] > 0:
+        if has_validation:
             aggr_metrics_val, best_metrics, best_value = validate(
                 val_evaluator, 
                 self.tensorboard_writer, 
@@ -690,7 +715,7 @@ class TrainingPipeline:
             logger.info("Avg sample train. time: {} seconds".format(avg_sample_time))
             
             # 定期在验证集上评估
-            if self.config['val_ratio'] > 0 and \
+            if has_validation and \
                     ((epoch == self.config["epochs"]) or 
                      (epoch == self.start_epoch + 1) or 
                      (epoch % self.config['val_interval'] == 0)):

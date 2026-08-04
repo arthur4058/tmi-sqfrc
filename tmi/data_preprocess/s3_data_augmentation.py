@@ -280,18 +280,21 @@ def main():
     np.save(os.path.join(args.save_dir, 'train_trjs_augmented.npy'), augmented_trjs)
     np.save(os.path.join(args.save_dir, 'train_labels_augmented.npy'), augmented_labels)
     
-    # 复制测试集
-    logger.info('复制测试集...')
-    test_trjs = np.load(os.path.join(args.data_dir, 'test_trjs.npy'), allow_pickle=True)
-    test_labels = np.load(os.path.join(args.data_dir, 'test_labels.npy'), allow_pickle=True)
-    np.save(os.path.join(args.save_dir, 'test_trjs.npy'), test_trjs)
-    np.save(os.path.join(args.save_dir, 'test_labels.npy'), test_labels)
+    # 复制未增强的验证/测试集及其审计元数据。
+    for split in ('val', 'test'):
+        for suffix in ('trjs', 'labels', 'user_ids', 'source_ids', 'pair_ids'):
+            source = os.path.join(args.data_dir, f'{split}_{suffix}.npy')
+            if os.path.exists(source):
+                target = os.path.join(args.save_dir, f'{split}_{suffix}.npy')
+                np.save(target, np.load(source, allow_pickle=True))
     
     # 输出完成信息
     logger.info(f'数据增强完成!')
     logger.info(f'原始训练集大小: {len(train_trjs)}')
     logger.info(f'增强后训练集大小: {len(augmented_trjs)}')
-    logger.info(f'测试集大小: {len(test_trjs)}')
+    test_labels_path = os.path.join(args.data_dir, 'test_labels.npy')
+    if os.path.exists(test_labels_path):
+        logger.info(f'测试集大小: {len(np.load(test_labels_path))}')
 
 if __name__ == '__main__':
     main()
