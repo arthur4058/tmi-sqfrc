@@ -1,0 +1,5 @@
+condition,data_name,samples,accuracy,macro_precision,macro_recall,macro_f1,accuracy_delta_vs_fixed_5s,macro_f1_delta_vs_fixed_5s
+fixed_5s,geolife_published_fixed_5s,4932,0.7419,0.7115,0.7326,0.7042,0.0,0.0
+fixed_30s,geolife_published_fixed_30s,4940,0.6366,0.5168,0.5284,0.4974,-0.10529999999999995,-0.20680000000000004
+fixed_60s,geolife_published_fixed_60s,4918,0.4929,0.4237,0.4447,0.3833,-0.249,-0.3209000000000001
+variable_5_60s,geolife_published_variable_5_60s,4940,0.6836,0.608,0.6413,0.6112,-0.05830000000000002,-0.09300000000000008
