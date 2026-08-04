@@ -149,7 +149,15 @@ class FeatureData(object):
         0        1     2         3         4             5     6        7               8 
         delta_t, hour, distance, velocity, acceleration, jerk, heading, heading_change, heading_change_rate
         '''
-        use_features = config['motion_features']
+        use_features = list(config['motion_features'])
+        # The reliability module consumes delta_t as an auxiliary quality
+        # signal.  It is appended after the motion channels so the model can
+        # remove it before passing data to the unchanged feature encoder.
+        if config.get('sampling_quality_reliability', False):
+            quality_feature = int(config.get('sampling_quality_feature', 0))
+            if quality_feature in use_features:
+                use_features.remove(quality_feature)
+            use_features.append(quality_feature)
         self.all_noise_df = self.all_noise_df[use_features]
         self.all_clean_df = self.all_clean_df[use_features]
         self.all_masks_df = self.all_masks_df[use_features]

@@ -45,7 +45,9 @@ def model_factory(config, data):
             feature_hyperparams,
             len(data.feature_data.class_names), 
             dropout=config['dropout'],
-            activation=config['activation']
+            activation=config['activation'],
+            sampling_quality_reliability=config.get('sampling_quality_reliability', False),
+            sampling_quality_hidden_dim=config.get('sampling_quality_hidden_dim', 16)
         )
         
         # 记录日志
@@ -776,7 +778,8 @@ class DualTSTransformerEncoderClassifier(nn.Module):
     双分支Transformer编码器分类器，结合轨迹和特征两个分支的信息。
     """
     def __init__(self, trajectory_branch_hyperparams, feature_branch_hyperparams, num_classes, dropout=0.1,
-                 activation='gelu'):
+                 activation='gelu', sampling_quality_reliability=False,
+                 sampling_quality_hidden_dim=16):
         super(DualTSTransformerEncoderClassifier, self).__init__()
         self.num_classes = num_classes
         
@@ -785,6 +788,20 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         self.feature_feat_dim = feature_branch_hyperparams.get('feat_dim')
         self.trajectory_max_len = trajectory_branch_hyperparams.get('max_len')
         self.feature_max_len = feature_branch_hyperparams.get('max_len')
+        self.sampling_quality_reliability = sampling_quality_reliability
+
+        if self.sampling_quality_reliability:
+            # Five descriptors: local standardized delta_t, its magnitude,
+            # segment mean magnitude, segment dispersion and point density.
+            self.sampling_quality_gate = nn.Sequential(
+                nn.Linear(5, sampling_quality_hidden_dim),
+                nn.GELU(),
+                nn.Linear(sampling_quality_hidden_dim, self.feature_feat_dim)
+            )
+            # Identity at initialization makes the module a strict, auditable
+            # extension of B0 rather than an implicit feature rescaling.
+            nn.init.zeros_(self.sampling_quality_gate[-1].weight)
+            nn.init.zeros_(self.sampling_quality_gate[-1].bias)
         
         # 创建分支模型，使用专门为双分支设计的TSTransformerEncoderForDualBranch
         self.trajectory_branch = TSTransformerEncoderForDualBranch(**trajectory_branch_hyperparams)
@@ -840,6 +857,39 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             output: 分类结果，形状 (batch_size, num_classes)
         """
         batch_size = X1.size(0)
+
+        if self.sampling_quality_reliability:
+            expected_dim = self.feature_feat_dim + 1
+            if X2.size(-1) != expected_dim:
+                raise ValueError(
+                    "sampling-quality reliability expects "
+                    f"{expected_dim} feature channels (motion + delta_t), "
+                    f"got {X2.size(-1)}"
+                )
+
+            motion_features = X2[..., :self.feature_feat_dim]
+            delta_t = X2[..., self.feature_feat_dim:self.feature_feat_dim + 1]
+            valid = padding_mask2.unsqueeze(-1).to(X2.dtype)
+            count = valid.sum(dim=1, keepdim=True).clamp_min(1.0)
+            mean_abs = (delta_t.abs() * valid).sum(dim=1, keepdim=True) / count
+            centered = (delta_t - (delta_t * valid).sum(dim=1, keepdim=True) / count) * valid
+            dispersion = torch.sqrt(
+                centered.square().sum(dim=1, keepdim=True) / count + 1e-6
+            )
+            density = (count / float(self.feature_max_len)).clamp(0.0, 1.0)
+            quality_descriptor = torch.cat([
+                delta_t,
+                delta_t.abs(),
+                mean_abs.expand_as(delta_t),
+                dispersion.expand_as(delta_t),
+                density.expand_as(delta_t)
+            ], dim=-1)
+            # Reliability is bounded to [0.5, 1.5] and equals exactly one at
+            # initialization. Padding remains zeroed by the encoder mask.
+            reliability = 1.0 + 0.5 * torch.tanh(
+                self.sampling_quality_gate(quality_descriptor)
+            )
+            X2 = motion_features * reliability
         
         # 获取两个分支的特征表示
         trajectory_output = self.trajectory_branch(X1, padding_mask1)  # (batch_size, seq_len*d_model)
