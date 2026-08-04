@@ -7,6 +7,7 @@ from tmi.data_preprocess.variable_sampling import (
     apply_condition,
     build_paired_views,
     fixed_interval_sample,
+    piecewise_variable_sample,
     physical_windows,
 )
 
@@ -30,12 +31,23 @@ class VariableSamplingTest(unittest.TestCase):
         self.assertTrue(np.all(np.isin(sampled[:, 0], trj[:, 0])))
         self.assertTrue(np.all(np.diff(sampled[:, 0]) > 0))
 
-    def test_random_views_are_deterministic_and_keep_timestamps(self):
+    def test_fixed_sampling_keeps_first_observation_per_episode(self):
+        timestamps = np.asarray([0, 2, 7, 14, 16, 31], dtype=float)
+        trj = np.column_stack((timestamps, timestamps, timestamps))
+        sampled = fixed_interval_sample(trj, 10)
+        np.testing.assert_array_equal(sampled[:, 0], [0, 14, 31])
+
+    def test_variable_view_is_deterministic_and_keeps_timestamps(self):
         trj = trajectory(300)
-        first = apply_condition(trj, "random_drop_70", 42, "pair")
-        second = apply_condition(trj, "random_drop_70", 42, "pair")
+        first = apply_condition(trj, "variable_5_60s", 42, "pair")
+        second = apply_condition(trj, "variable_5_60s", 42, "pair")
         np.testing.assert_array_equal(first, second)
         self.assertTrue(np.all(np.isin(first[:, 0], trj[:, 0])))
+        self.assertGreater(len(np.unique(np.diff(first[:, 0]))), 1)
+
+        third = piecewise_variable_sample(
+            trj, np.random.default_rng(123))
+        self.assertTrue(np.all(np.isin(third[:, 0], trj[:, 0])))
 
     def test_paired_views_have_identical_metadata_and_minimum_points(self):
         trjs = np.asarray([trajectory(600), trajectory(600)], dtype=object)

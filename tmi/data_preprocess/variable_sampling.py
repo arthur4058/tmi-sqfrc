@@ -1,4 +1,11 @@
-"""Physical-time windows and deterministic variable-sampling views."""
+"""Literature-backed physical-time sampling views for GeoLife.
+
+Fixed-rate views use the equal-duration episode operator described by
+Burkhard et al. (2020): split time into equal episodes and retain the first
+real observation in every non-empty episode.  The variable-rate view keeps
+the same operator but changes the episode length between consecutive
+physical-time blocks.  Coordinates are never interpolated or synthesized.
+"""
 
 import argparse
 import hashlib
@@ -12,15 +19,13 @@ from logzero import logger
 
 DEFAULT_CONDITIONS = (
     "fixed_5s",
-    "fixed_10s",
-    "fixed_20s",
     "fixed_30s",
     "fixed_60s",
-    "random_drop_30",
-    "random_drop_50",
-    "random_drop_70",
-    "continuous_gap_30",
+    "variable_5_60s",
 )
+
+VARIABLE_INTERVALS_SECONDS = (5, 10, 15, 30, 60)
+VARIABLE_BLOCK_SECONDS = 60
 
 
 def clean_trajectory(trajectory):
@@ -56,43 +61,58 @@ def physical_windows(trajectory, window_seconds=300, stride_seconds=150):
     return windows
 
 
-def fixed_interval_sample(trajectory, interval_seconds):
-    """Select original points at-or-after a regular time grid."""
+def fixed_interval_sample(trajectory, interval_seconds, anchor_time=None):
+    """Keep the first real observation in each equal-duration episode.
+
+    Empty episodes remain empty.  This is equivalent to the temporal
+    subsampling operator used by Burkhard et al. (2020), and it deliberately
+    avoids coordinate interpolation.
+    """
+    trajectory = clean_trajectory(trajectory)
+    if len(trajectory) < 2 or interval_seconds <= 0:
+        return trajectory
+    anchor = trajectory[0, 0] if anchor_time is None else float(anchor_time)
+    episode_ids = np.floor(
+        (trajectory[:, 0] - anchor) / float(interval_seconds) + 1e-12
+    ).astype(np.int64)
+    _, first_indices = np.unique(episode_ids, return_index=True)
+    return trajectory[np.sort(first_indices)]
+
+
+def piecewise_variable_sample(
+        trajectory, rng, intervals=VARIABLE_INTERVALS_SECONDS,
+        block_seconds=VARIABLE_BLOCK_SECONDS):
+    """Apply a deterministic piecewise-variable episode schedule.
+
+    For a 300-second window, a seeded permutation assigns 5, 10, 15, 30 and
+    60-second episode lengths to consecutive 60-second blocks.  This keeps
+    all observations real while ensuring that every window contains multiple
+    acquisition rates.  It is an explicit extension of the published fixed
+    episode operator, not a missing-point corruption model.
+    """
     trajectory = clean_trajectory(trajectory)
     if len(trajectory) < 2:
         return trajectory
-    targets = np.arange(
-        trajectory[0, 0], trajectory[-1, 0] + 1e-9, interval_seconds)
-    indices = np.searchsorted(trajectory[:, 0], targets, side="left")
-    indices = np.unique(indices[indices < len(trajectory)])
-    return trajectory[indices]
+    intervals = tuple(int(value) for value in intervals)
+    if not intervals or min(intervals) <= 0 or block_seconds <= 0:
+        raise ValueError("intervals and block_seconds must be positive")
 
-
-def random_drop_sample(trajectory, drop_ratio, rng, min_points=5):
-    trajectory = clean_trajectory(trajectory)
-    if len(trajectory) <= min_points:
-        return trajectory
-    keep_count = max(min_points, int(np.ceil(len(trajectory) * (1.0 - drop_ratio))))
-    keep_count = min(keep_count, len(trajectory))
-    if keep_count == len(trajectory):
-        return trajectory
-    interior_count = max(0, keep_count - 2)
-    interior = rng.choice(
-        np.arange(1, len(trajectory) - 1), size=interior_count, replace=False)
-    indices = np.sort(np.concatenate(([0], interior, [len(trajectory) - 1])))
-    return trajectory[indices]
-
-
-def continuous_gap_sample(trajectory, gap_ratio, rng):
-    trajectory = clean_trajectory(trajectory)
-    if len(trajectory) < 2:
-        return trajectory
-    duration = trajectory[-1, 0] - trajectory[0, 0]
-    gap_duration = duration * gap_ratio
-    gap_start = rng.uniform(trajectory[0, 0], trajectory[-1, 0] - gap_duration)
-    gap_end = gap_start + gap_duration
-    return trajectory[
-        (trajectory[:, 0] < gap_start) | (trajectory[:, 0] > gap_end)]
+    start = float(trajectory[0, 0])
+    block_ids = np.floor(
+        (trajectory[:, 0] - start) / float(block_seconds) + 1e-12
+    ).astype(np.int64)
+    schedule = rng.permutation(np.asarray(intervals, dtype=int))
+    sampled_blocks = []
+    for block_id in np.unique(block_ids):
+        block = trajectory[block_ids == block_id]
+        interval = int(schedule[int(block_id) % len(schedule)])
+        sampled_blocks.append(
+            fixed_interval_sample(
+                block, interval,
+                anchor_time=start + int(block_id) * block_seconds,
+            )
+        )
+    return clean_trajectory(np.concatenate(sampled_blocks, axis=0))
 
 
 def deterministic_rng(seed, pair_id, condition):
@@ -105,15 +125,9 @@ def apply_condition(trajectory, condition, seed, pair_id, min_points=5):
     if condition.startswith("fixed_"):
         interval = int(condition.removeprefix("fixed_").removesuffix("s"))
         sampled = fixed_interval_sample(trajectory, interval)
-    elif condition.startswith("random_drop_"):
-        ratio = int(condition.removeprefix("random_drop_")) / 100.0
-        sampled = random_drop_sample(
-            trajectory, ratio, deterministic_rng(seed, pair_id, condition),
-            min_points=min_points)
-    elif condition.startswith("continuous_gap_"):
-        ratio = int(condition.removeprefix("continuous_gap_")) / 100.0
-        sampled = continuous_gap_sample(
-            trajectory, ratio, deterministic_rng(seed, pair_id, condition))
+    elif condition == "variable_5_60s":
+        sampled = piecewise_variable_sample(
+            trajectory, deterministic_rng(seed, pair_id, condition))
     else:
         raise ValueError(f"unknown sampling condition: {condition}")
     return clean_trajectory(sampled)
@@ -175,14 +189,31 @@ def _point_stats(trjs):
         "points_median": float(np.median(lengths)),
         "points_min": int(lengths.min()),
         "points_max": int(lengths.max()),
+        "interval_mean_seconds": float(np.mean(intervals)),
         "interval_median_seconds": float(np.median(intervals)),
+        "interval_std_seconds": float(np.std(intervals)),
+        "interval_max_seconds": float(np.max(intervals)),
     }
 
 
 def build_and_save(data_dir, output_dir, manifest_path, conditions,
                    seed, window_seconds, stride_seconds, min_points):
     manifest = {
-        "protocol": "geolife-variable-sampling-v1",
+        "protocol": "geolife-published-episode-sampling-v2",
+        "sampling_operator": {
+            "name": "equal-duration episodes, first real observation",
+            "reference": (
+                "Burkhard et al. (2020), Transportation Research Part C, "
+                "doi:10.1016/j.trc.2020.01.021"
+            ),
+            "interpolation": False,
+        },
+        "variable_view": {
+            "name": "piecewise-variable extension",
+            "intervals_seconds": list(VARIABLE_INTERVALS_SECONDS),
+            "block_seconds": VARIABLE_BLOCK_SECONDS,
+            "schedule": "seeded permutation per paired window",
+        },
         "seed": seed,
         "window_seconds": window_seconds,
         "stride_seconds": stride_seconds,

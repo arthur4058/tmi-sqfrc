@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 python_bin="${PYTHON_BIN:-/home/yc/miniconda3/envs/tmi-sqfrc/bin/python}"
 s4_script="$repo_root/tmi/data_preprocess/s4_trajectory_feature_calculation_with_CPD.py"
-views_root="$repo_root/data/geolife_sampling_views"
+views_root="$repo_root/data/geolife_published_sampling_views"
 logs_root="$repo_root/data/logs"
 
 mkdir -p "$logs_root"
@@ -32,31 +32,12 @@ run_s4() {
     grep "Running time" "$logs_root/$log_name.log"
 }
 
-fixed5_features="$repo_root/data/geolife_user_fixed_5s_features"
-run_s4 \
-    "$repo_root/data/geolife_user_fixed5_augmented/train_trjs_augmented.npy" \
-    "$repo_root/data/geolife_user_fixed5_augmented/train_labels_augmented.npy" \
-    "$fixed5_features/train" \
-    "s4_user_fixed_5s_train"
-run_s4 \
-    "$views_root/fixed_5s/val_trjs.npy" \
-    "$views_root/fixed_5s/val_labels.npy" \
-    "$fixed5_features/val" \
-    "s4_user_fixed_5s_val"
-run_s4 \
-    "$views_root/fixed_5s/test_trjs.npy" \
-    "$views_root/fixed_5s/test_labels.npy" \
-    "$fixed5_features/test" \
-    "s4_user_fixed_5s_test"
-
-for condition in \
-    fixed_10s fixed_20s fixed_30s fixed_60s \
-    random_drop_30 random_drop_50 random_drop_70 continuous_gap_30
+for condition in fixed_5s fixed_30s fixed_60s variable_5_60s
 do
-    feature_name="geolife_user_${condition}"
+    feature_name="geolife_published_${condition}"
     run_s4 \
         "$views_root/$condition/test_trjs.npy" \
         "$views_root/$condition/test_labels.npy" \
         "$repo_root/data/${feature_name}_features/test" \
-        "s4_user_${condition}_test"
+        "s4_published_${condition}_test"
 done

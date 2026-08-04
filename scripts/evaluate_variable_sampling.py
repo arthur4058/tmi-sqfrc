@@ -16,15 +16,10 @@ import pandas as pd
 
 
 CONDITIONS = {
-    "fixed_5s": "geolife_user_fixed_5s",
-    "fixed_10s": "geolife_user_fixed_10s",
-    "fixed_20s": "geolife_user_fixed_20s",
-    "fixed_30s": "geolife_user_fixed_30s",
-    "fixed_60s": "geolife_user_fixed_60s",
-    "random_drop_30": "geolife_user_random_drop_30",
-    "random_drop_50": "geolife_user_random_drop_50",
-    "random_drop_70": "geolife_user_random_drop_70",
-    "continuous_gap_30": "geolife_user_continuous_gap_30",
+    "fixed_5s": "geolife_published_fixed_5s",
+    "fixed_30s": "geolife_published_fixed_30s",
+    "fixed_60s": "geolife_published_fixed_60s",
+    "variable_5_60s": "geolife_published_variable_5_60s",
 }
 
 
@@ -130,7 +125,7 @@ def main() -> None:
     parser.add_argument(
         "--output-root",
         type=Path,
-        default=Path("experiments/geolife_variable_sampling_tests"),
+        default=Path("experiments/geolife_published_sampling_tests"),
     )
     parser.add_argument(
         "--report-dir",
@@ -230,7 +225,7 @@ def main() -> None:
     ).stdout.strip()
 
     payload = {
-        "protocol": "geolife-user-disjoint-variable-sampling-v1",
+        "protocol": "geolife-published-episode-sampling-v2",
         "created_at": datetime.now().astimezone().isoformat(),
         "git_commit_before_results": commit,
         "base_config": str(base_config_path.relative_to(repo)),
@@ -238,13 +233,13 @@ def main() -> None:
         "checkpoint_sha256": sha256(checkpoint),
         "results": results,
     }
-    json_path = report_dir / "geolife_variable_sampling_results.json"
+    json_path = report_dir / "geolife_published_sampling_results.json"
     json_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
 
-    csv_path = report_dir / "geolife_variable_sampling_results.csv"
+    csv_path = report_dir / "geolife_published_sampling_results.csv"
     with csv_path.open("w", encoding="utf-8", newline="") as stream:
         fieldnames = [
             "condition",
