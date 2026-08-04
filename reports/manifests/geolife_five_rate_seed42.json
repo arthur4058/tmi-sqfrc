@@ -1,0 +1,244 @@
+{
+  "protocol": "geolife-published-episode-sampling-v2",
+  "sampling_operator": {
+    "name": "equal-duration episodes, first real observation",
+    "reference": "Burkhard et al. (2020), Transportation Research Part C, doi:10.1016/j.trc.2020.01.021",
+    "interpolation": false
+  },
+  "variable_view": {
+    "name": "piecewise-variable extension",
+    "intervals_seconds": [
+      5,
+      10,
+      15,
+      30,
+      60
+    ],
+    "block_seconds": 60,
+    "schedule": "seeded permutation per paired window"
+  },
+  "seed": 42,
+  "window_seconds": 300,
+  "stride_seconds": 150,
+  "minimum_points": 5,
+  "paired_across_conditions": true,
+  "conditions": [
+    "fixed_5s",
+    "fixed_10s",
+    "fixed_20s",
+    "fixed_30s",
+    "fixed_60s"
+  ],
+  "splits": {
+    "train": {
+      "sample_count": 49093,
+      "user_count": 44,
+      "class_counts": {
+        "0": 11050,
+        "1": 7096,
+        "2": 13111,
+        "3": 9943,
+        "4": 7893
+      },
+      "rejected_windows": {
+        "fixed_60s": 21653,
+        "fixed_30s": 8743,
+        "fixed_5s": 2989,
+        "fixed_10s": 4010,
+        "fixed_20s": 6180
+      },
+      "view_stats": {
+        "fixed_5s": {
+          "points_mean": 51.39007597824537,
+          "points_median": 59.0,
+          "points_min": 5,
+          "points_max": 61,
+          "interval_mean_seconds": 5.807808230253052,
+          "interval_median_seconds": 5.0,
+          "interval_std_seconds": 5.236436134512254,
+          "interval_max_seconds": 178.0
+        },
+        "fixed_10s": {
+          "points_mean": 27.753345690831686,
+          "points_median": 30.0,
+          "points_min": 5,
+          "points_max": 31,
+          "interval_mean_seconds": 10.880861305221098,
+          "interval_median_seconds": 10.0,
+          "interval_std_seconds": 6.576082936831336,
+          "interval_max_seconds": 179.0
+        },
+        "fixed_20s": {
+          "points_mean": 14.649970464220969,
+          "points_median": 15.0,
+          "points_min": 5,
+          "points_max": 16,
+          "interval_mean_seconds": 21.03641149767653,
+          "interval_median_seconds": 20.0,
+          "interval_std_seconds": 8.301884774954864,
+          "interval_max_seconds": 179.0
+        },
+        "fixed_30s": {
+          "points_mean": 10.100910516774286,
+          "points_median": 10.0,
+          "points_min": 5,
+          "points_max": 11,
+          "interval_mean_seconds": 31.103762161726625,
+          "interval_median_seconds": 30.0,
+          "interval_std_seconds": 9.35309002372937,
+          "interval_max_seconds": 179.0
+        },
+        "fixed_60s": {
+          "points_mean": 5.432077892978632,
+          "points_median": 5.0,
+          "points_min": 5,
+          "points_max": 6,
+          "interval_mean_seconds": 60.85602801676594,
+          "interval_median_seconds": 60.0,
+          "interval_std_seconds": 11.44662171136458,
+          "interval_max_seconds": 179.0
+        }
+      }
+    },
+    "val": {
+      "sample_count": 7505,
+      "user_count": 6,
+      "class_counts": {
+        "0": 2742,
+        "1": 901,
+        "2": 2122,
+        "3": 1159,
+        "4": 581
+      },
+      "rejected_windows": {
+        "fixed_60s": 4227,
+        "fixed_5s": 632,
+        "fixed_10s": 858,
+        "fixed_20s": 1343,
+        "fixed_30s": 1919
+      },
+      "view_stats": {
+        "fixed_5s": {
+          "points_mean": 54.80159893404397,
+          "points_median": 61.0,
+          "points_min": 5,
+          "points_max": 61,
+          "interval_mean_seconds": 5.458627325208467,
+          "interval_median_seconds": 5.0,
+          "interval_std_seconds": 4.8596082119164,
+          "interval_max_seconds": 178.0
+        },
+        "fixed_10s": {
+          "points_mean": 28.33697534976682,
+          "points_median": 31.0,
+          "points_min": 5,
+          "points_max": 31,
+          "interval_mean_seconds": 10.697515158604823,
+          "interval_median_seconds": 10.0,
+          "interval_std_seconds": 6.314644858375675,
+          "interval_max_seconds": 178.0
+        },
+        "fixed_20s": {
+          "points_mean": 14.866355762824783,
+          "points_median": 16.0,
+          "points_min": 5,
+          "points_max": 16,
+          "interval_mean_seconds": 20.90091959987316,
+          "interval_median_seconds": 20.0,
+          "interval_std_seconds": 7.986430749363037,
+          "interval_max_seconds": 179.0
+        },
+        "fixed_30s": {
+          "points_mean": 10.279946702198535,
+          "points_median": 11.0,
+          "points_min": 5,
+          "points_max": 11,
+          "interval_mean_seconds": 30.942609769405276,
+          "interval_median_seconds": 30.0,
+          "interval_std_seconds": 9.157424382430722,
+          "interval_max_seconds": 179.0
+        },
+        "fixed_60s": {
+          "points_mean": 5.592138574283811,
+          "points_median": 6.0,
+          "points_min": 5,
+          "points_max": 6,
+          "interval_mean_seconds": 60.69472493036211,
+          "interval_median_seconds": 60.0,
+          "interval_std_seconds": 11.149537508718465,
+          "interval_max_seconds": 179.0
+        }
+      }
+    },
+    "test": {
+      "sample_count": 4941,
+      "user_count": 12,
+      "class_counts": {
+        "0": 1370,
+        "1": 573,
+        "2": 640,
+        "3": 2016,
+        "4": 342
+      },
+      "rejected_windows": {
+        "fixed_60s": 2942,
+        "fixed_20s": 1255,
+        "fixed_30s": 1586,
+        "fixed_10s": 950,
+        "fixed_5s": 826
+      },
+      "view_stats": {
+        "fixed_5s": {
+          "points_mean": 51.49119611414693,
+          "points_median": 60.0,
+          "points_min": 5,
+          "points_max": 61,
+          "interval_mean_seconds": 5.782380740509145,
+          "interval_median_seconds": 5.0,
+          "interval_std_seconds": 6.258074701613845,
+          "interval_max_seconds": 174.0
+        },
+        "fixed_10s": {
+          "points_mean": 26.810159886662618,
+          "points_median": 30.0,
+          "points_min": 5,
+          "points_max": 31,
+          "interval_mean_seconds": 11.240872592685529,
+          "interval_median_seconds": 10.0,
+          "interval_std_seconds": 8.139937676355999,
+          "interval_max_seconds": 177.0
+        },
+        "fixed_20s": {
+          "points_mean": 14.268366727383121,
+          "points_median": 15.0,
+          "points_min": 5,
+          "points_max": 16,
+          "interval_mean_seconds": 21.574230845497947,
+          "interval_median_seconds": 20.0,
+          "interval_std_seconds": 10.240943693733813,
+          "interval_max_seconds": 177.0
+        },
+        "fixed_30s": {
+          "points_mean": 9.941914592187816,
+          "points_median": 10.0,
+          "points_min": 5,
+          "points_max": 11,
+          "interval_mean_seconds": 31.561880403784347,
+          "interval_median_seconds": 30.0,
+          "interval_std_seconds": 11.643162070882136,
+          "interval_max_seconds": 178.0
+        },
+        "fixed_60s": {
+          "points_mean": 5.420360250961344,
+          "points_median": 5.0,
+          "points_min": 5,
+          "points_max": 6,
+          "interval_mean_seconds": 60.98457030355753,
+          "interval_median_seconds": 60.0,
+          "interval_std_seconds": 13.775701969555252,
+          "interval_max_seconds": 178.0
+        }
+      }
+    }
+  }
+}

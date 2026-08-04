@@ -1,0 +1,547 @@
+{
+  "protocol": "geolife-five-rate-matched-v1",
+  "status": "PASSED",
+  "checks": {
+    "clean_noise_labels_equal": true,
+    "all_arrays_aligned": true,
+    "all_five_classes_present": true,
+    "all_feature_values_finite": true
+  },
+  "rates": {
+    "fixed_5s": {
+      "train": {
+        "samples": 61142,
+        "class_counts": {
+          "0": 13068,
+          "1": 13084,
+          "2": 12853,
+          "3": 13097,
+          "4": 9040
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            61142,
+            2
+          ],
+          "noise_trj_segs": [
+            61142,
+            2
+          ],
+          "trj_seg_masks": [
+            61142
+          ],
+          "clean_multi_feature_segs": [
+            61142,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            61142,
+            10
+          ],
+          "fs_seg_masks": [
+            61142,
+            9
+          ]
+        }
+      },
+      "val": {
+        "samples": 7043,
+        "class_counts": {
+          "0": 2739,
+          "1": 901,
+          "2": 2020,
+          "3": 1159,
+          "4": 224
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            7043,
+            2
+          ],
+          "noise_trj_segs": [
+            7043,
+            2
+          ],
+          "trj_seg_masks": [
+            7043
+          ],
+          "clean_multi_feature_segs": [
+            7043,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            7043,
+            10
+          ],
+          "fs_seg_masks": [
+            7043,
+            9
+          ]
+        }
+      },
+      "test": {
+        "samples": 4932,
+        "class_counts": {
+          "0": 1370,
+          "1": 573,
+          "2": 640,
+          "3": 2016,
+          "4": 333
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            4932,
+            2
+          ],
+          "noise_trj_segs": [
+            4932,
+            2
+          ],
+          "trj_seg_masks": [
+            4932
+          ],
+          "clean_multi_feature_segs": [
+            4932,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            4932,
+            10
+          ],
+          "fs_seg_masks": [
+            4932,
+            9
+          ]
+        }
+      }
+    },
+    "fixed_10s": {
+      "train": {
+        "samples": 63618,
+        "class_counts": {
+          "0": 13059,
+          "1": 13085,
+          "2": 13011,
+          "3": 13095,
+          "4": 11368
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            63618,
+            2
+          ],
+          "noise_trj_segs": [
+            63618,
+            2
+          ],
+          "trj_seg_masks": [
+            63618
+          ],
+          "clean_multi_feature_segs": [
+            63618,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            63618,
+            10
+          ],
+          "fs_seg_masks": [
+            63618,
+            9
+          ]
+        }
+      },
+      "val": {
+        "samples": 7212,
+        "class_counts": {
+          "0": 2737,
+          "1": 901,
+          "2": 2079,
+          "3": 1159,
+          "4": 336
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            7212,
+            2
+          ],
+          "noise_trj_segs": [
+            7212,
+            2
+          ],
+          "trj_seg_masks": [
+            7212
+          ],
+          "clean_multi_feature_segs": [
+            7212,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            7212,
+            10
+          ],
+          "fs_seg_masks": [
+            7212,
+            9
+          ]
+        }
+      },
+      "test": {
+        "samples": 4941,
+        "class_counts": {
+          "0": 1370,
+          "1": 573,
+          "2": 640,
+          "3": 2016,
+          "4": 342
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            4941,
+            2
+          ],
+          "noise_trj_segs": [
+            4941,
+            2
+          ],
+          "trj_seg_masks": [
+            4941
+          ],
+          "clean_multi_feature_segs": [
+            4941,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            4941,
+            10
+          ],
+          "fs_seg_masks": [
+            4941,
+            9
+          ]
+        }
+      }
+    },
+    "fixed_20s": {
+      "train": {
+        "samples": 64055,
+        "class_counts": {
+          "0": 13038,
+          "1": 13080,
+          "2": 13109,
+          "3": 13095,
+          "4": 11733
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            64055,
+            2
+          ],
+          "noise_trj_segs": [
+            64055,
+            2
+          ],
+          "trj_seg_masks": [
+            64055
+          ],
+          "clean_multi_feature_segs": [
+            64055,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            64055,
+            10
+          ],
+          "fs_seg_masks": [
+            64055,
+            9
+          ]
+        }
+      },
+      "val": {
+        "samples": 7259,
+        "class_counts": {
+          "0": 2734,
+          "1": 901,
+          "2": 2122,
+          "3": 1159,
+          "4": 343
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            7259,
+            2
+          ],
+          "noise_trj_segs": [
+            7259,
+            2
+          ],
+          "trj_seg_masks": [
+            7259
+          ],
+          "clean_multi_feature_segs": [
+            7259,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            7259,
+            10
+          ],
+          "fs_seg_masks": [
+            7259,
+            9
+          ]
+        }
+      },
+      "test": {
+        "samples": 4940,
+        "class_counts": {
+          "0": 1370,
+          "1": 572,
+          "2": 640,
+          "3": 2016,
+          "4": 342
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            4940,
+            2
+          ],
+          "noise_trj_segs": [
+            4940,
+            2
+          ],
+          "trj_seg_masks": [
+            4940
+          ],
+          "clean_multi_feature_segs": [
+            4940,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            4940,
+            10
+          ],
+          "fs_seg_masks": [
+            4940,
+            9
+          ]
+        }
+      }
+    },
+    "fixed_30s": {
+      "train": {
+        "samples": 63857,
+        "class_counts": {
+          "0": 13002,
+          "1": 13081,
+          "2": 13108,
+          "3": 13095,
+          "4": 11571
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            63857,
+            2
+          ],
+          "noise_trj_segs": [
+            63857,
+            2
+          ],
+          "trj_seg_masks": [
+            63857
+          ],
+          "clean_multi_feature_segs": [
+            63857,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            63857,
+            10
+          ],
+          "fs_seg_masks": [
+            63857,
+            9
+          ]
+        }
+      },
+      "val": {
+        "samples": 7236,
+        "class_counts": {
+          "0": 2734,
+          "1": 901,
+          "2": 2122,
+          "3": 1159,
+          "4": 320
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            7236,
+            2
+          ],
+          "noise_trj_segs": [
+            7236,
+            2
+          ],
+          "trj_seg_masks": [
+            7236
+          ],
+          "clean_multi_feature_segs": [
+            7236,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            7236,
+            10
+          ],
+          "fs_seg_masks": [
+            7236,
+            9
+          ]
+        }
+      },
+      "test": {
+        "samples": 4940,
+        "class_counts": {
+          "0": 1370,
+          "1": 572,
+          "2": 640,
+          "3": 2016,
+          "4": 342
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            4940,
+            2
+          ],
+          "noise_trj_segs": [
+            4940,
+            2
+          ],
+          "trj_seg_masks": [
+            4940
+          ],
+          "clean_multi_feature_segs": [
+            4940,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            4940,
+            10
+          ],
+          "fs_seg_masks": [
+            4940,
+            9
+          ]
+        }
+      }
+    },
+    "fixed_60s": {
+      "train": {
+        "samples": 62786,
+        "class_counts": {
+          "0": 12749,
+          "1": 12983,
+          "2": 13074,
+          "3": 13058,
+          "4": 10922
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            62786,
+            2
+          ],
+          "noise_trj_segs": [
+            62786,
+            2
+          ],
+          "trj_seg_masks": [
+            62786
+          ],
+          "clean_multi_feature_segs": [
+            62786,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            62786,
+            10
+          ],
+          "fs_seg_masks": [
+            62786,
+            9
+          ]
+        }
+      },
+      "val": {
+        "samples": 7129,
+        "class_counts": {
+          "0": 2682,
+          "1": 899,
+          "2": 2122,
+          "3": 1158,
+          "4": 268
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            7129,
+            2
+          ],
+          "noise_trj_segs": [
+            7129,
+            2
+          ],
+          "trj_seg_masks": [
+            7129
+          ],
+          "clean_multi_feature_segs": [
+            7129,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            7129,
+            10
+          ],
+          "fs_seg_masks": [
+            7129,
+            9
+          ]
+        }
+      },
+      "test": {
+        "samples": 4918,
+        "class_counts": {
+          "0": 1356,
+          "1": 571,
+          "2": 638,
+          "3": 2015,
+          "4": 338
+        },
+        "array_shapes": {
+          "clean_trj_segs": [
+            4918,
+            2
+          ],
+          "noise_trj_segs": [
+            4918,
+            2
+          ],
+          "trj_seg_masks": [
+            4918
+          ],
+          "clean_multi_feature_segs": [
+            4918,
+            10
+          ],
+          "noise_multi_feature_segs": [
+            4918,
+            10
+          ],
+          "fs_seg_masks": [
+            4918,
+            9
+          ]
+        }
+      }
+    }
+  }
+}
