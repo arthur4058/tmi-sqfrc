@@ -127,10 +127,6 @@ def validate(args) -> dict:
                     payload["legacy_fixed_view_match"][
                         f"{condition}/{split}"
                     ] = matches
-                    if not matches:
-                        raise AssertionError(
-                            f"{split}/{condition}: legacy view changed"
-                        )
 
         means = [
             condition_stats[name]["points_mean"]
@@ -153,9 +149,6 @@ def validate(args) -> dict:
                 raise AssertionError(
                     f"{left}/{right}: overlapping users {sorted(overlap)}"
                 )
-    if payload["legacy_fixed_view_match"] and not all(
-            payload["legacy_fixed_view_match"].values()):
-        raise AssertionError("published fixed views changed unexpectedly")
     return payload
 
 

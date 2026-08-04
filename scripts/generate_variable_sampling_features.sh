@@ -9,6 +9,13 @@ logs_root="$repo_root/data/logs"
 
 mkdir -p "$logs_root"
 
+augmented_root="$repo_root/data/geolife_published_fixed5_augmented"
+"$python_bin" -m tmi.data_preprocess.s3_data_augmentation \
+    --data_dir "$views_root/fixed_5s" \
+    --save_dir "$augmented_root" \
+    --random_seed 42 \
+    > "$logs_root/s3_published_fixed5.log" 2>&1
+
 run_s4() {
     local input_trjs="$1"
     local input_labels="$2"
@@ -32,12 +39,22 @@ run_s4() {
     grep "Running time" "$logs_root/$log_name.log"
 }
 
-for condition in fixed_5s fixed_30s fixed_60s variable_5_60s
-do
-    feature_name="geolife_published_${condition}"
+fixed5_features="$repo_root/data/geolife_published_fixed_5s_features"
+run_s4 \
+    "$augmented_root/train_trjs_augmented.npy" \
+    "$augmented_root/train_labels_augmented.npy" \
+    "$fixed5_features/train" \
+    "s4_published_fixed_5s_train"
+run_s4 \
+    "$views_root/fixed_5s/val_trjs.npy" \
+    "$views_root/fixed_5s/val_labels.npy" \
+    "$fixed5_features/val" \
+    "s4_published_fixed_5s_val"
+
+for condition in fixed_5s fixed_30s fixed_60s variable_5_60s; do
     run_s4 \
         "$views_root/$condition/test_trjs.npy" \
         "$views_root/$condition/test_labels.npy" \
-        "$repo_root/data/${feature_name}_features/test" \
+        "$repo_root/data/geolife_published_${condition}_features/test" \
         "s4_published_${condition}_test"
 done

@@ -111,14 +111,14 @@ def main() -> None:
         "--base-config",
         type=Path,
         default=Path(
-            "configs/variable_sampling/geolife_user_fixed5_seed10086.json"
+            "configs/variable_sampling/geolife_published_fixed5_seed10086.json"
         ),
     )
     parser.add_argument(
         "--checkpoint",
         type=Path,
         default=Path(
-            "experiments/geolife_user_fixed5_seed10086/"
+            "experiments/geolife_published_fixed5_seed10086/"
             "checkpoints/model_best.pth"
         ),
     )
