@@ -162,7 +162,8 @@ def cross_rate_distillation_terms(
         logits_weight: float = 0.3,
         feature_weight: float = 0.05,
         confidence_power: float = 1.0,
-        minimum_quality_weight: float = 0.25) -> DistillationTerms:
+        minimum_quality_weight: float = 0.25,
+        density_mode: str = "sparsity") -> DistillationTerms:
     """Compute supervised and sampling-quality-aware distillation losses.
 
     Teacher confidence suppresses uncertain soft targets. The observed point
@@ -173,6 +174,8 @@ def cross_rate_distillation_terms(
         raise ValueError("temperature must be positive")
     if not 0 <= minimum_quality_weight <= 1:
         raise ValueError("minimum_quality_weight must be in [0, 1]")
+    if density_mode not in {"sparsity", "density_capped"}:
+        raise ValueError(f"Unknown density mode: {density_mode}")
 
     supervised = loss_module(student_logits, targets).mean()
 
@@ -184,9 +187,12 @@ def cross_rate_distillation_terms(
     student_count = student_padding_mask.sum(dim=1).to(student_logits.dtype)
     teacher_count = teacher_padding_mask.sum(dim=1).to(student_logits.dtype)
     density_ratio = (student_count / teacher_count.clamp_min(1.0)).clamp(0.0, 1.0)
-    sparsity = 1.0 - density_ratio
+    if density_mode == "sparsity":
+        density_signal = 1.0 - density_ratio
+    elif density_mode == "density_capped":
+        density_signal = density_ratio
     rate_weight = minimum_quality_weight + (
-        1.0 - minimum_quality_weight) * sparsity
+        1.0 - minimum_quality_weight) * density_signal
     quality_weight = teacher_confidence.pow(confidence_power) * rate_weight
 
     log_student = F.log_softmax(student_logits / temperature, dim=-1)

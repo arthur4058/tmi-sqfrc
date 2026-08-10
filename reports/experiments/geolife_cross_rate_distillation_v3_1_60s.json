@@ -1,0 +1,83 @@
+{
+  "protocol": "geolife-cross-rate-distillation-v3.1-density-capped-60s",
+  "created_at": "2026-08-10T17:22:16+08:00",
+  "branch": "exp/cross-rate-distillation-v3-1-density-capped",
+  "base_commit": "b9cee73",
+  "purpose": "reduce negative transfer from the dense 5-second teacher to the extremely sparse 60-second student",
+  "teacher": {
+    "rate_seconds": 5,
+    "data_name": "geolife_v3_fixed_5s",
+    "checkpoint": "experiments/geolife_v3_b0_fixed_5s_seed10086/checkpoints/model_best.pth"
+  },
+  "student": {
+    "rate_seconds": 60,
+    "data_name": "geolife_v3_fixed_60s",
+    "paired_training_segments": 45672,
+    "paired_fraction": 0.9616575074221464
+  },
+  "method": {
+    "density_mode": "density_capped",
+    "density_ratio": "student_valid_points / teacher_valid_points",
+    "rate_weight": "q_min + (1 - q_min) * density_ratio",
+    "quality_weight": "teacher_confidence^confidence_power * rate_weight",
+    "temperature": 4.0,
+    "logits_weight": 0.3,
+    "feature_weight": 0.05,
+    "confidence_power": 1.0,
+    "minimum_quality_weight": 0.25
+  },
+  "training": {
+    "seed": 10086,
+    "max_epochs": 200,
+    "stopped_epoch": 42,
+    "patience": 40,
+    "best_epoch": 32,
+    "best_validation_accuracy": 0.7369897601346612,
+    "best_validation_macro_f1": 0.6617209294182793,
+    "runtime_seconds": 448.7610924243927,
+    "checkpoint": "experiments/geolife_cross_rate_v3_1_density_capped_60s_seed10086/checkpoints/model_best.pth",
+    "checkpoint_sha256": "0db21064b7049116e359ccbd078c3b56d71ab52ce3927591783c5ec3e55d55f7",
+    "checkpoint_finite": true
+  },
+  "test": {
+    "accuracy": 0.6838,
+    "macro_precision": 0.6369,
+    "macro_recall": 0.6720,
+    "macro_f1": 0.6352,
+    "samples": 4918,
+    "per_class": {
+      "Walk": {"precision": 0.7836, "recall": 0.9211, "f1": 0.8468, "samples": 1356},
+      "Bike": {"precision": 0.6692, "recall": 0.7723, "f1": 0.7171, "samples": 571},
+      "Bus": {"precision": 0.3949, "recall": 0.6975, "f1": 0.5042, "samples": 638},
+      "Car": {"precision": 0.8972, "recall": 0.5370, "f1": 0.6718, "samples": 2015},
+      "Train": {"precision": 0.4398, "recall": 0.4320, "f1": 0.4358, "samples": 338}
+    },
+    "workbook": "experiments/geolife_cross_rate_v3_1_density_capped_60s_seed10086/matched_test/classification_results.xlsx"
+  },
+  "comparisons": {
+    "b0_60s": {
+      "accuracy": 0.6846,
+      "macro_f1": 0.6293,
+      "delta_accuracy": -0.0008,
+      "delta_macro_f1": 0.0059
+    },
+    "v3_60s": {
+      "accuracy": 0.6710,
+      "macro_f1": 0.6219,
+      "delta_accuracy": 0.0128,
+      "delta_macro_f1": 0.0133
+    }
+  },
+  "decision": {
+    "criterion": "both accuracy and macro-F1 must exceed B0 at 60 seconds",
+    "passed": false,
+    "summary": "V3.1 repairs V3 negative transfer and improves macro-F1 over B0, but accuracy remains 0.08 percentage points below B0."
+  },
+  "validation": {
+    "unit_tests": 5,
+    "unit_tests_passed": true,
+    "smoke_training_passed": true,
+    "formal_training_finite": true,
+    "independent_test_passed": true
+  }
+}

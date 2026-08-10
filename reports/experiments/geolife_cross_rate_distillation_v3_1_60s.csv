@@ -1,0 +1,4 @@
+variant,rate_seconds,accuracy,macro_precision,macro_recall,macro_f1,samples,delta_accuracy_vs_b0,delta_macro_f1_vs_b0
+b0,60,0.6846,0.6376,0.6580,0.6293,4918,0.0000,0.0000
+v3_adaptive,60,0.6710,0.6258,0.6577,0.6219,4918,-0.0136,-0.0074
+v3_1_density_capped,60,0.6838,0.6369,0.6720,0.6352,4918,-0.0008,0.0059

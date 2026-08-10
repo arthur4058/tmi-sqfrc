@@ -407,6 +407,8 @@ class SupervisedRunner(BaseRunner):
                         'distillation_confidence_power', 1.0)),
                     minimum_quality_weight=float(self.exp_config.get(
                         'distillation_minimum_quality_weight', 0.25)),
+                    density_mode=self.exp_config.get(
+                        'distillation_density_mode', 'sparsity'),
                 )
                 mean_loss = terms.total
                 batch_loss = mean_loss.detach() * len(targets)

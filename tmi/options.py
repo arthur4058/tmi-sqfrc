@@ -158,6 +158,11 @@ class Options(object):
         self.parser.add_argument('--distillation_minimum_quality_weight', type=float,
                                  default=0.25,
                                  help='稀疏度自适应权重下界')
+        self.parser.add_argument(
+            '--distillation_density_mode',
+            choices=['sparsity', 'density_capped'],
+            default='sparsity',
+            help='蒸馏密度权重模式；density_capped在极稀疏样本上降低教师约束')
 
     def parse(self):
 
