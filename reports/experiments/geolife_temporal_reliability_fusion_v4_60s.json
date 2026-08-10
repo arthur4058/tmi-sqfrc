@@ -1,0 +1,86 @@
+{
+  "protocol": "geolife-temporal-reliability-fusion-v4-60s",
+  "created_at": "2026-08-10T18:40:16+08:00",
+  "branch": "feat/temporal-reliability-fusion-v4",
+  "base_commit": "4ffb01d",
+  "data_protocol": "geolife-five-rate-matched-v1",
+  "method": {
+    "name": "temporal reliability fusion",
+    "description": "bounded segment-level residual calibration of the encoded motion-feature branch",
+    "quality_descriptors": [
+      "mean absolute standardized delta_t",
+      "standardized delta_t dispersion",
+      "valid point density",
+      "log nominal sampling interval relative to 5 seconds"
+    ],
+    "gate_range": [0.75, 1.25],
+    "hidden_dimension": 8,
+    "added_parameters": 1192,
+    "added_parameter_percent": 0.220358,
+    "identity_initialized": true,
+    "shared_backbone_same_seed_verified": true
+  },
+  "training": {
+    "data_name": "geolife_five_rate_fixed_60s",
+    "seed": 10086,
+    "max_epochs": 200,
+    "stopped_epoch": 42,
+    "patience": 40,
+    "best_epoch": 2,
+    "best_validation_accuracy": 0.7322205077851031,
+    "best_validation_macro_f1": 0.6204020462917812,
+    "runtime_seconds": 493.53662967681885,
+    "checkpoint": "experiments/geolife_v4_temporal_reliability_fixed_60s_seed10086/checkpoints/model_best.pth",
+    "checkpoint_sha256": "7fc88416494b8c555ccbb5089804cadab982f551d8933f33897fc21aeed58489",
+    "checkpoint_finite": true
+  },
+  "test": {
+    "accuracy": 0.7166,
+    "macro_precision": 0.6846,
+    "macro_recall": 0.6598,
+    "macro_f1": 0.6414,
+    "samples": 4918,
+    "per_class": {
+      "Walk": {"precision": 0.7991, "recall": 0.9034, "f1": 0.8480, "samples": 1356},
+      "Bike": {"precision": 0.6325, "recall": 0.7898, "f1": 0.7025, "samples": 571},
+      "Bus": {"precision": 0.4412, "recall": 0.6944, "f1": 0.5396, "samples": 638},
+      "Car": {"precision": 0.8542, "recall": 0.6541, "f1": 0.7409, "samples": 2015},
+      "Train": {"precision": 0.6960, "recall": 0.2574, "f1": 0.3758, "samples": 338}
+    },
+    "workbook": "experiments/geolife_v4_temporal_reliability_fixed_60s_seed10086/matched_test/classification_results.xlsx"
+  },
+  "comparisons": {
+    "b0_60s": {
+      "accuracy": 0.7161,
+      "macro_f1": 0.6355,
+      "delta_accuracy": 0.0005,
+      "delta_macro_f1": 0.0059
+    },
+    "m1_60s": {
+      "accuracy": 0.7143,
+      "macro_f1": 0.6382,
+      "delta_accuracy": 0.0023,
+      "delta_macro_f1": 0.0032
+    }
+  },
+  "decision": {
+    "minimum_criterion": "accuracy and macro-F1 both exceed B0 on the matched 60-second test set",
+    "minimum_criterion_passed": true,
+    "strong_effect_criterion": "both metrics improve by at least 0.5 percentage points",
+    "strong_effect_criterion_passed": false,
+    "summary": "Preliminary positive result: macro-F1 improves by 0.59 points, while accuracy improves by only 0.05 points and requires multi-seed confirmation."
+  },
+  "excluded_run": {
+    "reason": "optional gate was originally constructed before the B0 backbone and changed same-seed backbone initialization",
+    "included_in_results": false,
+    "local_archive": "experiments/geolife_v4_temporal_reliability_fixed_60s_seed10086_invalid_rng_initialization"
+  },
+  "validation": {
+    "unit_tests": 6,
+    "unit_tests_passed": true,
+    "smoke_training_passed": true,
+    "formal_training_finite": true,
+    "checkpoint_finite": true,
+    "independent_test_passed": true
+  }
+}

@@ -1,0 +1,4 @@
+variant,rate_seconds,accuracy,macro_precision,macro_recall,macro_f1,samples,delta_accuracy_vs_b0,delta_macro_f1_vs_b0
+b0,60,0.7161,,,0.6355,4918,0.0000,0.0000
+m1_pointwise_gate,60,0.7143,,,0.6382,4918,-0.0018,0.0027
+v4_temporal_reliability_fusion,60,0.7166,0.6846,0.6598,0.6414,4918,0.0005,0.0059

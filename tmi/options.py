@@ -133,6 +133,14 @@ class Options(object):
         delta_t, hour, distance, velocity, acceleration, jerk, heading, heading_change, heading_change_rate
         '''
         self.parser.add_argument('--motion_features', type=str, default='3,4,5,8')
+        self.parser.add_argument('--temporal_reliability_fusion', action='store_true',
+                                 help='用delta_t与点密度对运动特征分支进行有界残差可靠性校准')
+        self.parser.add_argument('--temporal_reliability_hidden_dim', type=int, default=8,
+                                 help='时间可靠性门控的隐藏维度')
+        self.parser.add_argument('--temporal_reliability_strength', type=float, default=0.25,
+                                 help='时间可靠性残差门控的最大调整幅度')
+        self.parser.add_argument('--sampling_interval_seconds', type=float, default=5.0,
+                                 help='当前固定采样视图的名义采样间隔（秒）')
         self.parser.add_argument('--patience', type=int, default=60)
         self.parser.add_argument('--class_names', type=str, default="Walk,Bike,Bus,Car,Train",
                                   help='逗号分隔的类别名称列表，按索引顺序对应标签值')

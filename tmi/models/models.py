@@ -47,7 +47,11 @@ def model_factory(config, data):
             dropout=config['dropout'],
             activation=config['activation'],
             sampling_quality_reliability=config.get('sampling_quality_reliability', False),
-            sampling_quality_hidden_dim=config.get('sampling_quality_hidden_dim', 16)
+            sampling_quality_hidden_dim=config.get('sampling_quality_hidden_dim', 16),
+            temporal_reliability_fusion=config.get('temporal_reliability_fusion', False),
+            temporal_reliability_hidden_dim=config.get('temporal_reliability_hidden_dim', 8),
+            temporal_reliability_strength=config.get('temporal_reliability_strength', 0.25),
+            sampling_interval_seconds=config.get('sampling_interval_seconds', 5.0)
         )
         
         # 记录日志
@@ -779,7 +783,11 @@ class DualTSTransformerEncoderClassifier(nn.Module):
     """
     def __init__(self, trajectory_branch_hyperparams, feature_branch_hyperparams, num_classes, dropout=0.1,
                  activation='gelu', sampling_quality_reliability=False,
-                 sampling_quality_hidden_dim=16):
+                 sampling_quality_hidden_dim=16,
+                 temporal_reliability_fusion=False,
+                 temporal_reliability_hidden_dim=8,
+                 temporal_reliability_strength=0.25,
+                 sampling_interval_seconds=5.0):
         super(DualTSTransformerEncoderClassifier, self).__init__()
         self.num_classes = num_classes
         
@@ -789,6 +797,18 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         self.trajectory_max_len = trajectory_branch_hyperparams.get('max_len')
         self.feature_max_len = feature_branch_hyperparams.get('max_len')
         self.sampling_quality_reliability = sampling_quality_reliability
+        self.temporal_reliability_fusion = temporal_reliability_fusion
+        self.temporal_reliability_strength = float(temporal_reliability_strength)
+        self.sampling_interval_seconds = float(sampling_interval_seconds)
+
+        if self.sampling_quality_reliability and self.temporal_reliability_fusion:
+            raise ValueError(
+                "sampling_quality_reliability and temporal_reliability_fusion "
+                "cannot be enabled together")
+        if not 0.0 <= self.temporal_reliability_strength <= 1.0:
+            raise ValueError("temporal_reliability_strength must be in [0, 1]")
+        if self.sampling_interval_seconds <= 0:
+            raise ValueError("sampling_interval_seconds must be positive")
 
         if self.sampling_quality_reliability:
             # Five descriptors: local standardized delta_t, its magnitude,
@@ -802,7 +822,7 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             # extension of B0 rather than an implicit feature rescaling.
             nn.init.zeros_(self.sampling_quality_gate[-1].weight)
             nn.init.zeros_(self.sampling_quality_gate[-1].bias)
-        
+
         # 创建分支模型，使用专门为双分支设计的TSTransformerEncoderForDualBranch
         self.trajectory_branch = TSTransformerEncoderForDualBranch(**trajectory_branch_hyperparams)
         self.feature_branch = TSTransformerEncoderForDualBranch(**feature_branch_hyperparams)
@@ -843,6 +863,21 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         self.act = _get_activation_fn(activation)
         self.dropout1 = nn.Dropout(dropout)
 
+        if self.temporal_reliability_fusion:
+            # Construct the optional module after every B0 layer so enabling
+            # it does not consume RNG before the shared backbone is created.
+            self.temporal_reliability_gate = nn.Sequential(
+                nn.Linear(4, temporal_reliability_hidden_dim),
+                nn.GELU(),
+                nn.Linear(
+                    temporal_reliability_hidden_dim,
+                    int(feature_branch_hyperparams.get('d_model')))
+            )
+            # Exact B0 behavior at initialization. The bounded residual gate
+            # learns only the correction supported by the training data.
+            nn.init.zeros_(self.temporal_reliability_gate[-1].weight)
+            nn.init.zeros_(self.temporal_reliability_gate[-1].bias)
+
     def forward(self, X1, padding_mask1, X2, padding_mask2):
         """
         双分支转换器分类器的前向传播
@@ -857,18 +892,22 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             output: 分类结果，形状 (batch_size, num_classes)
         """
         batch_size = X1.size(0)
+        temporal_reliability = None
 
-        if self.sampling_quality_reliability:
+        if (self.sampling_quality_reliability
+                or self.temporal_reliability_fusion):
             expected_dim = self.feature_feat_dim + 1
             if X2.size(-1) != expected_dim:
                 raise ValueError(
-                    "sampling-quality reliability expects "
+                    "temporal reliability expects "
                     f"{expected_dim} feature channels (motion + delta_t), "
                     f"got {X2.size(-1)}"
                 )
 
             motion_features = X2[..., :self.feature_feat_dim]
             delta_t = X2[..., self.feature_feat_dim:self.feature_feat_dim + 1]
+
+        if self.sampling_quality_reliability:
             valid = padding_mask2.unsqueeze(-1).to(X2.dtype)
             count = valid.sum(dim=1, keepdim=True).clamp_min(1.0)
             mean_abs = (delta_t.abs() * valid).sum(dim=1, keepdim=True) / count
@@ -890,6 +929,27 @@ class DualTSTransformerEncoderClassifier(nn.Module):
                 self.sampling_quality_gate(quality_descriptor)
             )
             X2 = motion_features * reliability
+        elif self.temporal_reliability_fusion:
+            valid = padding_mask2.unsqueeze(-1).to(X2.dtype)
+            count = valid.sum(dim=1, keepdim=True).clamp_min(1.0)
+            mean = (delta_t * valid).sum(dim=1, keepdim=True) / count
+            mean_abs = (delta_t.abs() * valid).sum(dim=1, keepdim=True) / count
+            dispersion = torch.sqrt(
+                ((delta_t - mean) * valid).square().sum(dim=1, keepdim=True)
+                / count + 1e-6)
+            density = (count / float(self.feature_max_len)).clamp(0.0, 1.0)
+            nominal_interval = X2.new_full(
+                mean_abs.shape,
+                math.log1p(self.sampling_interval_seconds / 5.0))
+            descriptor = torch.cat([
+                mean_abs,
+                dispersion,
+                density,
+                nominal_interval,
+            ], dim=-1).squeeze(1)
+            temporal_reliability = 1.0 + self.temporal_reliability_strength * torch.tanh(
+                self.temporal_reliability_gate(descriptor))
+            X2 = motion_features
         
         # 获取两个分支的特征表示
         trajectory_output = self.trajectory_branch(X1, padding_mask1)  # (batch_size, seq_len*d_model)
@@ -900,6 +960,8 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             batch_size, X1.size(1), self.trajectory_d_model)
         feature_output = feature_output.view(
             batch_size, X2.size(1), self.feature_d_model)
+        if temporal_reliability is not None:
+            feature_output = feature_output * temporal_reliability.unsqueeze(1)
         
         # 在特征维度上拼接
         combined_output = torch.cat([trajectory_output, feature_output], dim=2)
