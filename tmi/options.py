@@ -141,6 +141,16 @@ class Options(object):
         self.parser.add_argument('--sim_noise_sweep', action='store_true',
                                  help='在测试模式下遍历不同类型和档位的模拟噪声进行评估，并汇总结果')
 
+        self.parser.add_argument('--physical_time_multiscale', action='store_true',
+                                 help='启用基于真实时间窗口的多尺度运动特征适配模块')
+        self.parser.add_argument('--physical_time_feature', type=int, default=9,
+                                 help='S4时间戳特征列，默认9')
+        self.parser.add_argument('--physical_time_windows_seconds', type=str,
+                                 default='30,60,120',
+                                 help='物理时间邻域（秒），逗号分隔')
+        self.parser.add_argument('--physical_time_hidden_dim', type=int, default=16,
+                                 help='物理时间尺度注意力的隐藏维度')
+
     def parse(self):
 
         args = self.parser.parse_args()
@@ -157,6 +167,10 @@ class Options(object):
 
         args.motion_features = [int(item) for item in args.motion_features.split(',')]
         
+        args.physical_time_windows_seconds = [
+            int(item)
+            for item in args.physical_time_windows_seconds.split(',')
+        ]
         args.key_metric = None
         
         # 处理类别名称

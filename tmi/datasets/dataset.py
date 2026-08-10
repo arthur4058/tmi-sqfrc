@@ -490,6 +490,14 @@ class DualBranchClassificationDataset(Dataset):
         else:
             X1 = self.trajectory_clean_features[ID]
             X2 = self.feature_clean_features[ID]
+
+        if config.get('physical_time_multiscale', False):
+            # Convert the auxiliary absolute timestamp to seconds relative to
+            # this segment before collate casts the array to float32. Keeping
+            # epoch-scale timestamps in float32 would erase 5--60 s gaps.
+            X2 = X2.copy()
+            if len(X2):
+                X2[:, -1] = X2[:, -1] - X2[0, -1]
             
         y = self.labels[ID]
         

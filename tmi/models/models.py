@@ -47,7 +47,11 @@ def model_factory(config, data):
             dropout=config['dropout'],
             activation=config['activation'],
             sampling_quality_reliability=config.get('sampling_quality_reliability', False),
-            sampling_quality_hidden_dim=config.get('sampling_quality_hidden_dim', 16)
+            sampling_quality_hidden_dim=config.get('sampling_quality_hidden_dim', 16),
+            physical_time_multiscale=config.get('physical_time_multiscale', False),
+            physical_time_windows=config.get(
+                'physical_time_windows_seconds', [30, 60, 120]),
+            physical_time_hidden_dim=config.get('physical_time_hidden_dim', 16)
         )
         
         # 记录日志
@@ -773,13 +777,96 @@ class TSTransformerEncoderForDualBranch(TSTransformerEncoder):
         return flattened
 
 
+class PhysicalTimeMultiScaleAdapter(nn.Module):
+    """Add motion context defined by seconds rather than point offsets.
+
+    Each scale averages the current and preceding valid observations whose
+    timestamps fall inside a physical-time window. A learned attention layer
+    combines the scales. The residual coefficient starts at zero, so enabling
+    this module initially preserves the B0 motion features exactly.
+    """
+
+    def __init__(self, feature_dim, windows_seconds=(30, 60, 120),
+                 hidden_dim=16):
+        super().__init__()
+        windows = tuple(float(value) for value in windows_seconds)
+        if not windows or any(value <= 0 for value in windows):
+            raise ValueError("physical-time windows must be positive")
+        if tuple(sorted(windows)) != windows or len(set(windows)) != len(windows):
+            raise ValueError("physical-time windows must be unique and increasing")
+
+        self.feature_dim = int(feature_dim)
+        self.windows_seconds = windows
+        self.scale_transforms = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(self.feature_dim, self.feature_dim),
+                nn.GELU(),
+            )
+            for _ in windows
+        ])
+        self.scale_attention = nn.Sequential(
+            nn.Linear(self.feature_dim + 1, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, 1),
+        )
+        self.output_projection = nn.Linear(self.feature_dim, self.feature_dim)
+        self.residual_alpha = nn.Parameter(torch.tensor(0.0))
+
+    def _physical_contexts(self, motion_features, timestamps, padding_mask):
+        valid = padding_mask.bool()
+        # Absolute timestamps can be large; subtracting the first valid value
+        # improves numerical precision without changing physical lags.
+        first = timestamps[:, :1]
+        relative_time = timestamps - first
+        relative_time = torch.nan_to_num(
+            relative_time, nan=0.0, posinf=0.0, neginf=0.0)
+        lag = relative_time.unsqueeze(2) - relative_time.unsqueeze(1)
+        pair_valid = valid.unsqueeze(2) & valid.unsqueeze(1)
+
+        contexts = []
+        counts = []
+        for window in self.windows_seconds:
+            neighborhood = pair_valid & (lag >= 0.0) & (lag <= window)
+            weights = neighborhood.to(motion_features.dtype)
+            count = weights.sum(dim=-1, keepdim=True).clamp_min(1.0)
+            contexts.append(torch.bmm(weights, motion_features) / count)
+            counts.append(count)
+        return torch.stack(contexts, dim=2), torch.stack(counts, dim=2)
+
+    def forward(self, motion_features, timestamps, padding_mask):
+        if timestamps.ndim == 3:
+            timestamps = timestamps.squeeze(-1)
+        if timestamps.ndim != 2:
+            raise ValueError("timestamps must have shape (batch, sequence)")
+
+        contexts, counts = self._physical_contexts(
+            motion_features, timestamps, padding_mask)
+        transformed = torch.stack([
+            transform(contexts[:, :, index, :])
+            for index, transform in enumerate(self.scale_transforms)
+        ], dim=2)
+        # The log count tells attention whether a nominal time scale contains
+        # enough real observations to be informative at the current rate.
+        attention_input = torch.cat(
+            [transformed, torch.log1p(counts)], dim=-1)
+        attention = torch.softmax(
+            self.scale_attention(attention_input).squeeze(-1), dim=-1)
+        fused = (attention.unsqueeze(-1) * transformed).sum(dim=2)
+        supplement = self.output_projection(fused)
+        strength = torch.tanh(self.residual_alpha)
+        output = motion_features + strength * supplement
+        return output * padding_mask.unsqueeze(-1).to(output.dtype)
+
+
 class DualTSTransformerEncoderClassifier(nn.Module):
     """
     双分支Transformer编码器分类器，结合轨迹和特征两个分支的信息。
     """
     def __init__(self, trajectory_branch_hyperparams, feature_branch_hyperparams, num_classes, dropout=0.1,
                  activation='gelu', sampling_quality_reliability=False,
-                 sampling_quality_hidden_dim=16):
+                 sampling_quality_hidden_dim=16,
+                 physical_time_multiscale=False, physical_time_windows=(30, 60, 120),
+                 physical_time_hidden_dim=16):
         super(DualTSTransformerEncoderClassifier, self).__init__()
         self.num_classes = num_classes
         
@@ -789,6 +876,16 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         self.trajectory_max_len = trajectory_branch_hyperparams.get('max_len')
         self.feature_max_len = feature_branch_hyperparams.get('max_len')
         self.sampling_quality_reliability = sampling_quality_reliability
+        self.physical_time_multiscale = physical_time_multiscale
+        if self.sampling_quality_reliability and self.physical_time_multiscale:
+            raise ValueError(
+                "sampling-quality reliability and physical-time multiscale "
+                "cannot be enabled together"
+            )
+        if self.physical_time_multiscale:
+            self.physical_time_adapter = PhysicalTimeMultiScaleAdapter(
+                self.feature_feat_dim, physical_time_windows,
+                physical_time_hidden_dim)
 
         if self.sampling_quality_reliability:
             # Five descriptors: local standardized delta_t, its magnitude,
@@ -857,6 +954,19 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             output: 分类结果，形状 (batch_size, num_classes)
         """
         batch_size = X1.size(0)
+
+        if self.physical_time_multiscale:
+            expected_dim = self.feature_feat_dim + 1
+            if X2.size(-1) != expected_dim:
+                raise ValueError(
+                    "physical-time multiscale expects "
+                    f"{expected_dim} feature channels (motion + timestamp), "
+                    f"got {X2.size(-1)}"
+                )
+            motion_features = X2[..., :self.feature_feat_dim]
+            timestamps = X2[..., self.feature_feat_dim]
+            X2 = self.physical_time_adapter(
+                motion_features, timestamps, padding_mask2)
 
         if self.sampling_quality_reliability:
             expected_dim = self.feature_feat_dim + 1

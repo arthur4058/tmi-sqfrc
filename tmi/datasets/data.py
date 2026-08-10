@@ -83,6 +83,19 @@ class Normalizer(object):
                 self.std = df.std()
             return (df - self.mean) / (self.std + np.finfo(float).eps)
 
+        elif self.norm_type == "standardization_except_last":
+            # The final channel is a raw timestamp in physical seconds. Keep it
+            # in physical units while fitting the motion-channel statistics.
+            motion = df.iloc[:, :-1]
+            if self.mean is None:
+                self.mean = motion.mean()
+                self.std = motion.std()
+            normalized = df.copy()
+            normalized.iloc[:, :-1] = (
+                motion - self.mean
+            ) / (self.std + np.finfo(float).eps)
+            return normalized
+
         elif self.norm_type == "minmax":
             if self.max_val is None:
                 self.max_val = df.max()
@@ -150,14 +163,22 @@ class FeatureData(object):
         delta_t, hour, distance, velocity, acceleration, jerk, heading, heading_change, heading_change_rate
         '''
         use_features = list(config['motion_features'])
-        # The reliability module consumes delta_t as an auxiliary quality
-        # signal.  It is appended after the motion channels so the model can
-        # remove it before passing data to the unchanged feature encoder.
-        if config.get('sampling_quality_reliability', False):
-            quality_feature = int(config.get('sampling_quality_feature', 0))
-            if quality_feature in use_features:
-                use_features.remove(quality_feature)
-            use_features.append(quality_feature)
+        # Optional sampling-aware modules consume a time signal as an
+        # auxiliary channel appended after the unchanged motion channels.
+        use_physical_time = config.get('physical_time_multiscale', False)
+        if config.get('sampling_quality_reliability', False) or use_physical_time:
+            auxiliary_feature = int(
+                config.get('physical_time_feature', 9)
+                if use_physical_time
+                else config.get('sampling_quality_feature', 0)
+            )
+            if auxiliary_feature in use_features:
+                use_features.remove(auxiliary_feature)
+            use_features.append(auxiliary_feature)
+            if auxiliary_feature not in self.all_masks_df.columns:
+                # Timestamp is auxiliary context, never a prediction target.
+                # S4 masks contain only the nine original motion channels.
+                self.all_masks_df[auxiliary_feature] = True
         self.all_noise_df = self.all_noise_df[use_features]
         self.all_clean_df = self.all_clean_df[use_features]
         self.all_masks_df = self.all_masks_df[use_features]
@@ -178,8 +199,12 @@ class FeatureData(object):
         self.clean_feature_df = self.all_clean_df
         self.masks_df = self.all_masks_df
 
-        self.feature_dfs = [(self.noise_feature_df, 'standardization'),
-                            (self.clean_feature_df, 'standardization')]
+        normalization = (
+            'standardization_except_last'
+            if use_physical_time else 'standardization'
+        )
+        self.feature_dfs = [(self.noise_feature_df, normalization),
+                            (self.clean_feature_df, normalization)]
 
     def load(self):
         sim_noise_type = self.config.get('sim_noise_type')
