@@ -1,0 +1,43 @@
+{
+  "protocol": "geolife-cross-rate-distillation-v3",
+  "teacher_rate_seconds": 5,
+  "student_rates_seconds": [20, 60],
+  "variants": {
+    "kd_logits": {
+      "distillation_logits_weight": 0.3,
+      "distillation_feature_weight": 0.0
+    },
+    "v3_adaptive": {
+      "distillation_logits_weight": 0.3,
+      "distillation_feature_weight": 0.05
+    }
+  },
+  "teacher": {
+    "data_name": "geolife_v3_fixed_5s",
+    "checkpoint": "experiments/geolife_v3_b0_fixed_5s_seed10086/checkpoints/model_best.pth"
+  },
+  "training": {
+    "task": "dual_branch_classification_from_scratch",
+    "data_class": "trajectory_with_feature",
+    "use_separate_val": true,
+    "epochs": 200,
+    "val_interval": 1,
+    "val_ratio": 0.0,
+    "batch_size": 64,
+    "lr": 0.001,
+    "optimizer": "RAdam",
+    "patience": 40,
+    "input_type": "50%noise",
+    "motion_features": [3, 4, 5, 8],
+    "gpu": "0",
+    "num_workers": 0,
+    "seed": 10086,
+    "console": true,
+    "print_interval": 100,
+    "distillation_temperature": 4.0,
+    "distillation_confidence_power": 1.0,
+    "distillation_minimum_quality_weight": 0.25,
+    "trajectory_branch_hyperparams": "feat_dim=2;max_len=200;d_model=64;n_heads=8;num_layers=4;dim_feedforward=256;dropout=0.1;pos_encoding=fixed;activation=gelu;norm=BatchNorm;freeze=false",
+    "feature_branch_hyperparams": "feat_dim=4;max_len=200;d_model=128;n_heads=16;num_layers=1;dim_feedforward=512;dropout=0.1;pos_encoding=learnable;activation=gelu;norm=LayerNorm;freeze=false"
+  }
+}

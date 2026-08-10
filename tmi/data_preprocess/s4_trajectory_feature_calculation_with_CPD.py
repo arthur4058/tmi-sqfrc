@@ -56,23 +56,31 @@ def initialize_worker(base_seed):
     np.random.seed(base_seed + worker_index)
 
 
-def filter_error_gps_data(trjs, labels, pool, n_threads):
+def filter_error_gps_data(trjs, labels, pair_ids, pool, n_threads):
     logger.info('filter_error_gps_data...')
     tasks = []
     batch_size = int(len(trjs) / n_threads + 1)
     for i in range(0, n_threads):
         tasks.append(pool.apply_async(do_filter_error_gps_data,
                                       (trjs[i * batch_size:(i + 1) * batch_size],
-                                       labels[i * batch_size:(i + 1) * batch_size])))
-    res = np.array([[t.get()[0], t.get()[1]] for t in tasks], dtype=object)
+                                       labels[i * batch_size:(i + 1) * batch_size],
+                                       pair_ids[i * batch_size:(i + 1) * batch_size])))
+    res = np.array(
+        [[t.get()[0], t.get()[1], t.get()[2]] for t in tasks],
+        dtype=object)
     trjs = np.concatenate(res[:, 0])
     labels = np.concatenate(res[:, 1])
+    pair_ids = np.concatenate(res[:, 2])
 
     # Sparse benchmark views must stay paired across sampling conditions.
     # The optional switch skips this dataset-level endpoint deletion while
     # retaining all per-trajectory validity and speed checks above.
     if DISABLE_PERCENTILE_FILTER:
-        return np.array(trjs, dtype=object), np.array(labels, dtype=np.int32)
+        return (
+            np.array(trjs, dtype=object),
+            np.array(labels, dtype=np.int32),
+            np.array(pair_ids),
+        )
 
     # filter out lat and lng whose values not in 1th ~ 99th percentile
     trjs_stack = np.vstack(trjs)[:, [1, 2]]  # keep lat, lng
@@ -80,8 +88,9 @@ def filter_error_gps_data(trjs, labels, pool, n_threads):
     _1th = np.percentile(trjs_stack, 1, axis=0)
     trjs_filtered = []
     labels_filtered = []
+    pair_ids_filtered = []
     deleted = []
-    for trj, label in zip(trjs, labels):
+    for trj, label, pair_id in zip(trjs, labels, pair_ids):
         indices_lat = np.where((trj[:, 1] >= _99th[0]) | (trj[:, 1] <= _1th[0]))
         indices_lon = np.where((trj[:, 2] >= _99th[1]) | (trj[:, 2] <= _1th[1]))
         indices = np.intersect1d(indices_lat, indices_lon)
@@ -92,14 +101,20 @@ def filter_error_gps_data(trjs, labels, pool, n_threads):
         if len(trj) >= MIN_N_POINTS:
             trjs_filtered.append(trj)
             labels_filtered.append(label)
+            pair_ids_filtered.append(pair_id)
 
-    return np.array(trjs_filtered, dtype=object), np.array(labels_filtered, dtype=np.int32)
+    return (
+        np.array(trjs_filtered, dtype=object),
+        np.array(labels_filtered, dtype=np.int32),
+        np.array(pair_ids_filtered),
+    )
 
 
-def do_filter_error_gps_data(trjs, labels):
+def do_filter_error_gps_data(trjs, labels, pair_ids):
     filtered_trjs = []
     filter_labels = []
-    for trj, label in zip(trjs, labels):
+    filtered_pair_ids = []
+    for trj, label, pair_id in zip(trjs, labels, pair_ids):
         n_points = len(trj)
         if n_points < MIN_N_POINTS:
             logger.info('gps points num not enough:{}'.format(n_points))
@@ -136,27 +151,38 @@ def do_filter_error_gps_data(trjs, labels):
         else:
             filtered_trjs.append(filtered_trj_seg)
             filter_labels.append(label)
-    return np.array(filtered_trjs, dtype=object), np.array(filter_labels)
+            filtered_pair_ids.append(pair_id)
+    return (
+        np.array(filtered_trjs, dtype=object),
+        np.array(filter_labels),
+        np.array(filtered_pair_ids),
+    )
 
 
-def segment_on_long_stay_time(trjs, labels, pool, n_threads):
+def segment_on_long_stay_time(trjs, labels, pair_ids, pool, n_threads):
     logger.info('segment_trjs...')
     tasks = []
     batch_size = int(len(trjs) / n_threads + 1)
     for i in range(0, n_threads):
         tasks.append(pool.apply_async(do_segment_on_long_stay_time, (
-            trjs[i * batch_size:(i + 1) * batch_size], labels[i * batch_size:(i + 1) * batch_size])))
+            trjs[i * batch_size:(i + 1) * batch_size],
+            labels[i * batch_size:(i + 1) * batch_size],
+            pair_ids[i * batch_size:(i + 1) * batch_size])))
 
-    res = np.array([[t.get()[0], t.get()[1]] for t in tasks], dtype=object)
+    res = np.array(
+        [[t.get()[0], t.get()[1], t.get()[2]] for t in tasks],
+        dtype=object)
     trj_segs = np.concatenate(res[:, 0])
     trj_seg_labels = np.concatenate(res[:, 1])
-    return trj_segs, trj_seg_labels
+    trj_seg_pair_ids = np.concatenate(res[:, 2])
+    return trj_segs, trj_seg_labels, trj_seg_pair_ids
 
 
-def do_segment_on_long_stay_time(trjs, labels):
+def do_segment_on_long_stay_time(trjs, labels, pair_ids):
     total_trj_segs = []
     total_trj_seg_labels = []
-    for trj, label in zip(trjs, labels):
+    total_trj_seg_pair_ids = []
+    for trj, label, pair_id in zip(trjs, labels, pair_ids):
         # first, split based on long stay points
         delta_ts = np.diff(trj[:, 0])
         split_idx = np.where(delta_ts > MAX_STAY_TIME_INTERVAL)
@@ -177,12 +203,19 @@ def do_segment_on_long_stay_time(trjs, labels):
             trj_sub_seg_labels = [label for _ in range(len(trj_sub_segs))]
             total_trj_segs.extend(trj_sub_segs)
             total_trj_seg_labels.extend(trj_sub_seg_labels)
+            total_trj_seg_pair_ids.extend(
+                [pair_id for _ in range(len(trj_sub_segs))])
     # total_trj_segs.extend(trj_segs)
     # total_trj_seg_labels.extend(trj_seg_labels)
-    return np.array(total_trj_segs, dtype=object), np.array(total_trj_seg_labels, dtype=object)
+    return (
+        np.array(total_trj_segs, dtype=object),
+        np.array(total_trj_seg_labels, dtype=object),
+        np.array(total_trj_seg_pair_ids),
+    )
 
 
-def calc_feature(trj_segs, trj_seg_labels, pool, n_threads, args):
+def calc_feature(trj_segs, trj_seg_labels, trj_seg_pair_ids,
+                 pool, n_threads, args):
     """
     noise means do not filter noise points
     """
@@ -193,10 +226,13 @@ def calc_feature(trj_segs, trj_seg_labels, pool, n_threads, args):
         tasks.append(pool.apply_async(do_calc_feature,
                                       (trj_segs[i * batch_size:(i + 1) * batch_size],
                                        trj_seg_labels[i * batch_size:(i + 1) * batch_size],
+                                       trj_seg_pair_ids[i * batch_size:(i + 1) * batch_size],
                                        args
                                        )))
     res = np.array(
-        [[t.get()[0], t.get()[1], t.get()[2], t.get()[3], t.get()[4], t.get()[5], t.get()[6], t.get()[7], t.get()[8]]
+        [[t.get()[0], t.get()[1], t.get()[2], t.get()[3], t.get()[4],
+          t.get()[5], t.get()[6], t.get()[7], t.get()[8], t.get()[9],
+          t.get()[10]]
          for t in tasks],
         dtype=object)
     logger.info('merging...')
@@ -209,11 +245,14 @@ def calc_feature(trj_segs, trj_seg_labels, pool, n_threads, args):
     multi_feature_seg_labels = np.concatenate(res[:, 6])
     n_removed_points = np.vstack(res[:, 7])
     n_total_points = np.vstack(res[:, 8])
+    feature_seg_pair_ids = np.concatenate(res[:, 9])
+    feature_seg_time_ranges = np.concatenate(res[:, 10])
     return ns_trj_segs, cn_trj_segs, fs_seg_masks, trj_seg_masks, ns_multi_feature_segs, cn_multi_feature_segs, \
-           multi_feature_seg_labels, n_removed_points, n_total_points
+           multi_feature_seg_labels, n_removed_points, n_total_points, \
+           feature_seg_pair_ids, feature_seg_time_ranges
 
 
-def do_calc_feature(trj_segs, trj_seg_labels, args):
+def do_calc_feature(trj_segs, trj_seg_labels, trj_seg_pair_ids, args):
     # ns: noise, cn: clean, i.e., noise filtered
     cn_trj_segs = []  # only keep lon and lat, which are interpolated to align the size of ns_trj_seg
     ns_trj_segs = []  # only keep lon and lat
@@ -223,10 +262,13 @@ def do_calc_feature(trj_segs, trj_seg_labels, args):
     ns_multi_feature_segs = []
     cn_multi_feature_segs = []
     multi_feature_seg_labels = []
+    feature_seg_pair_ids = []
+    feature_seg_time_ranges = []
     n_removed_points = [0 for i in range(args.n_class)]  # count removed points for each class
     n_total_points = [0 for i in range(args.n_class)]  # count all points for each class
 
-    for i, (trj_seg, trj_seg_label) in enumerate(zip(trj_segs, trj_seg_labels)):
+    for i, (trj_seg, trj_seg_label, pair_id) in enumerate(zip(
+            trj_segs, trj_seg_labels, trj_seg_pair_ids)):
         n_points = len(trj_seg)
 
         # store noise filtered feature value, cn: clean
@@ -367,6 +409,9 @@ def do_calc_feature(trj_segs, trj_seg_labels, args):
         ns_multi_feature_segs.append(ns_multi_feature_seg)
         cn_multi_feature_segs.append(cn_multi_feature_seg)
         multi_feature_seg_labels.append(trj_seg_label)
+        feature_seg_pair_ids.append(pair_id)
+        feature_seg_time_ranges.append([
+            float(ns_timestamps[0]), float(ns_timestamps[-1])])
 
         # ************ 5.GENERATE MASK FOR CLEAN FEATURE SEG ************
         # note masks are generated from clean features, using change point detection algorithm
@@ -420,7 +465,9 @@ def do_calc_feature(trj_segs, trj_seg_labels, args):
         np.array(cn_multi_feature_segs, dtype=object), \
         np.array(multi_feature_seg_labels), \
         n_removed_points, \
-        n_total_points
+        n_total_points, \
+        np.array(feature_seg_pair_ids), \
+        np.array(feature_seg_time_ranges, dtype=np.float64)
 
 
 if __name__ == '__main__':
@@ -430,6 +477,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='TRJ_SEG_FEATURE')
     parser.add_argument('--trjs_path', type=str, required=True)
     parser.add_argument('--labels_path', type=str, required=True)
+    parser.add_argument(
+        '--pair_ids_path', type=str,
+        help='Optional physical-window pair IDs aligned with trjs_path.')
     parser.add_argument('--n_class', type=int, default=5)  # use modes:2,4,6,5,7
     parser.add_argument('--save_dir', type=str, required=True)
 
@@ -464,6 +514,12 @@ if __name__ == '__main__':
     # raw data
     trjs = np.load(args.trjs_path, allow_pickle=True)
     labels = np.load(args.labels_path, allow_pickle=True)
+    if args.pair_ids_path:
+        pair_ids = np.load(args.pair_ids_path, allow_pickle=True)
+    else:
+        pair_ids = np.arange(len(trjs), dtype=np.int64)
+    if len(pair_ids) != len(trjs):
+        raise ValueError('pair_ids_path must align one-to-one with trjs_path')
     
     # TODO 随机打乱数据，防止res 合并时报错，如果还是报错多运行几次：
     # ValueError: all the input arrays must have same number of dimensions, 
@@ -471,10 +527,13 @@ if __name__ == '__main__':
     shuffle_idx = np.random.permutation(len(trjs))
     trjs = trjs[shuffle_idx]
     labels = labels[shuffle_idx]
+    pair_ids = pair_ids[shuffle_idx]
 
     # preprocess
-    trjs, labels = filter_error_gps_data(trjs, labels, pool, n_threads)
-    trj_segs, trj_seg_labels = segment_on_long_stay_time(trjs, labels, pool, n_threads)
+    trjs, labels, pair_ids = filter_error_gps_data(
+        trjs, labels, pair_ids, pool, n_threads)
+    trj_segs, trj_seg_labels, trj_seg_pair_ids = segment_on_long_stay_time(
+        trjs, labels, pair_ids, pool, n_threads)
     logger.info(f'before handling imbalance data: trj_segs: {trj_segs.shape}, trj_seg_labels: {trj_seg_labels.shape}')
 
     # handle imbalance data
@@ -491,8 +550,12 @@ if __name__ == '__main__':
     cn_multi_feature_segs, \
     multi_feature_seg_labels, \
     n_removed_points, \
-    n_total_points \
-        = calc_feature(trj_segs, trj_seg_labels, pool, n_threads, args)
+    n_total_points, \
+    feature_seg_pair_ids, \
+    feature_seg_time_ranges \
+        = calc_feature(
+            trj_segs, trj_seg_labels, trj_seg_pair_ids,
+            pool, n_threads, args)
     logger.info('total n_points after segment_on_stay_point: {}'.format(np.sum([len(seg) for seg in trj_segs])))
     logger.info(f'n_removed_points after calc_feature: {np.sum(n_removed_points, axis=0)}')
     logger.info(f'n_total_points after calc_feature: {np.sum(n_total_points, axis=0)}')
@@ -512,6 +575,8 @@ if __name__ == '__main__':
     np.save(f'{args.save_dir}/clean_multi_feature_seg_labels.npy', multi_feature_seg_labels)
     np.save(f'{args.save_dir}/noise_multi_feature_segs.npy', ns_multi_feature_segs)
     np.save(f'{args.save_dir}/noise_multi_feature_seg_labels.npy', multi_feature_seg_labels)
+    np.save(f'{args.save_dir}/segment_pair_ids.npy', feature_seg_pair_ids)
+    np.save(f'{args.save_dir}/segment_time_ranges.npy', feature_seg_time_ranges)
     # normalized_multi_feature_segs.to_pickle(f'{args.save_dir}/normalized_multi_feature_segs.pkl')
     # np.save(f'{args.save_dir}/multi_feature_seg_labels.npy',
     #         to_categorical(multi_feature_seg_labels, num_classes=args.n_class))  # labels to one-hot

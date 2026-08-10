@@ -141,6 +141,24 @@ class Options(object):
         self.parser.add_argument('--sim_noise_sweep', action='store_true',
                                  help='在测试模式下遍历不同类型和档位的模拟噪声进行评估，并汇总结果')
 
+        self.parser.add_argument('--cross_rate_distillation', action='store_true',
+                                 help='启用配对稠密GPS教师到稀疏GPS学生的知识蒸馏')
+        self.parser.add_argument('--distillation_teacher_data_name', type=str,
+                                 help='稠密教师数据集名称，例如geolife_five_rate_fixed_5s')
+        self.parser.add_argument('--distillation_teacher_checkpoint', type=str,
+                                 help='冻结教师模型checkpoint路径')
+        self.parser.add_argument('--distillation_temperature', type=float, default=4.0,
+                                 help='蒸馏softmax温度')
+        self.parser.add_argument('--distillation_logits_weight', type=float, default=0.3,
+                                 help='logit蒸馏损失权重')
+        self.parser.add_argument('--distillation_feature_weight', type=float, default=0.05,
+                                 help='池化表示余弦对齐损失权重')
+        self.parser.add_argument('--distillation_confidence_power', type=float, default=1.0,
+                                 help='教师置信度权重的指数')
+        self.parser.add_argument('--distillation_minimum_quality_weight', type=float,
+                                 default=0.25,
+                                 help='稀疏度自适应权重下界')
+
     def parse(self):
 
         args = self.parser.parse_args()

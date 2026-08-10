@@ -843,7 +843,8 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         self.act = _get_activation_fn(activation)
         self.dropout1 = nn.Dropout(dropout)
 
-    def forward(self, X1, padding_mask1, X2, padding_mask2):
+    def forward(self, X1, padding_mask1, X2, padding_mask2,
+                return_features=False):
         """
         双分支转换器分类器的前向传播
         
@@ -920,6 +921,8 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         # 分类
         output = self.classifier(pooled_features)  # (batch_size, num_classes)
         
+        if return_features:
+            return output, pooled_features
         return output
 
 

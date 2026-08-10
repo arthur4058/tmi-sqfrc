@@ -1,0 +1,289 @@
+{
+  "protocol": "geolife-cross-rate-distillation-v3",
+  "created_at": "2026-08-10T16:14:04.950177+08:00",
+  "git_commit_before_results": "4ffb01d7160712888d3e53b84cd1f1c311d3f2f0",
+  "teacher": {
+    "data_name": "geolife_v3_fixed_5s",
+    "checkpoint": "experiments/geolife_v3_b0_fixed_5s_seed10086/checkpoints/model_best.pth"
+  },
+  "training_pair_filter": {
+    "policy": "retain sparse train segments whose physical window exists at 5s",
+    "teacher_rate_seconds": 5,
+    "rates": {
+      "20": {
+        "segments_before": 48177,
+        "segments_after": 46242,
+        "segments_removed": 1935,
+        "retained_fraction": 0.9598356062021296
+      },
+      "60": {
+        "segments_before": 47493,
+        "segments_after": 45672,
+        "segments_removed": 1821,
+        "retained_fraction": 0.9616575074221464
+      }
+    }
+  },
+  "results": [
+    {
+      "accuracy": 0.7457,
+      "macro_precision": 0.7442,
+      "macro_recall": 0.7342,
+      "macro_f1": 0.7173,
+      "samples": 4932,
+      "per_class": {
+        "Car": {
+          "precision": 0.9134,
+          "recall": 0.6275,
+          "f1": 0.7439,
+          "samples": 2016
+        },
+        "Walk": {
+          "precision": 0.8298,
+          "recall": 0.9358,
+          "f1": 0.8796,
+          "samples": 1370
+        },
+        "Bus": {
+          "precision": 0.4259,
+          "recall": 0.7812,
+          "f1": 0.5513,
+          "samples": 640
+        },
+        "Bike": {
+          "precision": 0.7459,
+          "recall": 0.7888,
+          "f1": 0.7668,
+          "samples": 573
+        },
+        "Train": {
+          "precision": 0.8063,
+          "recall": 0.5375,
+          "f1": 0.645,
+          "samples": 333
+        }
+      },
+      "variant": "b0",
+      "rate_seconds": 5,
+      "checkpoint": "experiments/geolife_v3_b0_fixed_5s_seed10086/checkpoints/model_best.pth",
+      "checkpoint_sha256": "b2cdedafe828870a77077cb0edec0f938909013750d80961c7a3b7fd5990083d",
+      "checkpoint_finite": true,
+      "training_config": "experiments/geolife_v3_b0_fixed_5s_seed10086/training_config.json",
+      "test_workbook": "experiments/geolife_v3_b0_fixed_5s_seed10086/matched_test/classification_results.xlsx"
+    },
+    {
+      "accuracy": 0.7439,
+      "macro_precision": 0.6913,
+      "macro_recall": 0.7174,
+      "macro_f1": 0.6905,
+      "samples": 4940,
+      "per_class": {
+        "Car": {
+          "precision": 0.9178,
+          "recall": 0.6533,
+          "f1": 0.7633,
+          "samples": 2016
+        },
+        "Walk": {
+          "precision": 0.8215,
+          "recall": 0.9139,
+          "f1": 0.8652,
+          "samples": 1370
+        },
+        "Bus": {
+          "precision": 0.4663,
+          "recall": 0.7578,
+          "f1": 0.5774,
+          "samples": 640
+        },
+        "Bike": {
+          "precision": 0.7093,
+          "recall": 0.8234,
+          "f1": 0.7621,
+          "samples": 572
+        },
+        "Train": {
+          "precision": 0.5415,
+          "recall": 0.4386,
+          "f1": 0.4847,
+          "samples": 342
+        }
+      },
+      "variant": "b0",
+      "rate_seconds": 20,
+      "checkpoint": "experiments/geolife_v3_b0_fixed_20s_seed10086/checkpoints/model_best.pth",
+      "checkpoint_sha256": "bb74bbf402ab8ecaedfa3c0c08945158fad8153b881751c457adac035282a45f",
+      "checkpoint_finite": true,
+      "training_config": "experiments/geolife_v3_b0_fixed_20s_seed10086/training_config.json",
+      "test_workbook": "experiments/geolife_v3_b0_fixed_20s_seed10086/matched_test/classification_results.xlsx"
+    },
+    {
+      "accuracy": 0.6846,
+      "macro_precision": 0.6376,
+      "macro_recall": 0.658,
+      "macro_f1": 0.6293,
+      "samples": 4918,
+      "per_class": {
+        "Car": {
+          "precision": 0.8934,
+          "recall": 0.5613,
+          "f1": 0.6894,
+          "samples": 2015
+        },
+        "Walk": {
+          "precision": 0.7874,
+          "recall": 0.9285,
+          "f1": 0.8521,
+          "samples": 1356
+        },
+        "Bus": {
+          "precision": 0.3897,
+          "recall": 0.7116,
+          "f1": 0.5036,
+          "samples": 638
+        },
+        "Bike": {
+          "precision": 0.7238,
+          "recall": 0.6655,
+          "f1": 0.6934,
+          "samples": 571
+        },
+        "Train": {
+          "precision": 0.3939,
+          "recall": 0.4231,
+          "f1": 0.408,
+          "samples": 338
+        }
+      },
+      "variant": "b0",
+      "rate_seconds": 60,
+      "checkpoint": "experiments/geolife_v3_b0_fixed_60s_seed10086/checkpoints/model_best.pth",
+      "checkpoint_sha256": "e64aaab04b0b21ba0e182b87a0f4e9a35fc029a98f8c00a5500bd6d6cd297fec",
+      "checkpoint_finite": true,
+      "training_config": "experiments/geolife_v3_b0_fixed_60s_seed10086/training_config.json",
+      "test_workbook": "experiments/geolife_v3_b0_fixed_60s_seed10086/matched_test/classification_results.xlsx"
+    },
+    {
+      "accuracy": 0.7486,
+      "macro_precision": 0.6978,
+      "macro_recall": 0.7132,
+      "macro_f1": 0.6937,
+      "samples": 4940,
+      "per_class": {
+        "Car": {
+          "precision": 0.904,
+          "recall": 0.6682,
+          "f1": 0.7684,
+          "samples": 2016
+        },
+        "Walk": {
+          "precision": 0.8154,
+          "recall": 0.9285,
+          "f1": 0.8683,
+          "samples": 1370
+        },
+        "Bus": {
+          "precision": 0.4697,
+          "recall": 0.7641,
+          "f1": 0.5818,
+          "samples": 640
+        },
+        "Bike": {
+          "precision": 0.795,
+          "recall": 0.7727,
+          "f1": 0.7837,
+          "samples": 572
+        },
+        "Train": {
+          "precision": 0.5051,
+          "recall": 0.4327,
+          "f1": 0.4661,
+          "samples": 342
+        }
+      },
+      "variant": "v3_adaptive",
+      "rate_seconds": 20,
+      "checkpoint": "experiments/geolife_cross_rate_v3_adaptive_20s_seed10086/checkpoints/model_best.pth",
+      "checkpoint_sha256": "9618abc831d7df93c2d067045afb7c473e7a02e104cc2a86af6eecad4fb40c96",
+      "checkpoint_finite": true,
+      "training_config": "experiments/geolife_cross_rate_v3_adaptive_20s_seed10086/training_config.json",
+      "test_workbook": "experiments/geolife_cross_rate_v3_adaptive_20s_seed10086/matched_test/classification_results.xlsx"
+    },
+    {
+      "accuracy": 0.671,
+      "macro_precision": 0.6258,
+      "macro_recall": 0.6577,
+      "macro_f1": 0.6219,
+      "samples": 4918,
+      "per_class": {
+        "Car": {
+          "precision": 0.8741,
+          "recall": 0.5166,
+          "f1": 0.6494,
+          "samples": 2015
+        },
+        "Walk": {
+          "precision": 0.7864,
+          "recall": 0.9285,
+          "f1": 0.8515,
+          "samples": 1356
+        },
+        "Bus": {
+          "precision": 0.3808,
+          "recall": 0.6959,
+          "f1": 0.4922,
+          "samples": 638
+        },
+        "Bike": {
+          "precision": 0.6995,
+          "recall": 0.7215,
+          "f1": 0.7103,
+          "samples": 571
+        },
+        "Train": {
+          "precision": 0.3881,
+          "recall": 0.426,
+          "f1": 0.4062,
+          "samples": 338
+        }
+      },
+      "variant": "v3_adaptive",
+      "rate_seconds": 60,
+      "checkpoint": "experiments/geolife_cross_rate_v3_adaptive_60s_seed10086/checkpoints/model_best.pth",
+      "checkpoint_sha256": "13982d6b826855e8c143460b97d239396d978941506f170d4b5f0bca0a2931c5",
+      "checkpoint_finite": true,
+      "training_config": "experiments/geolife_cross_rate_v3_adaptive_60s_seed10086/training_config.json",
+      "test_workbook": "experiments/geolife_cross_rate_v3_adaptive_60s_seed10086/matched_test/classification_results.xlsx"
+    }
+  ],
+  "comparisons": [
+    {
+      "variant": "v3_adaptive",
+      "rate_seconds": 20,
+      "b0_accuracy": 0.7439,
+      "v3_accuracy": 0.7486,
+      "accuracy_delta": 0.0047000000000000375,
+      "b0_macro_f1": 0.6905,
+      "v3_macro_f1": 0.6937,
+      "macro_f1_delta": 0.0031999999999999806
+    },
+    {
+      "variant": "v3_adaptive",
+      "rate_seconds": 60,
+      "b0_accuracy": 0.6846,
+      "v3_accuracy": 0.671,
+      "accuracy_delta": -0.013599999999999945,
+      "b0_macro_f1": 0.6293,
+      "v3_macro_f1": 0.6219,
+      "macro_f1_delta": -0.007399999999999962
+    }
+  ],
+  "decision": {
+    "status": "not_passed",
+    "improved_sparse_rates": 1,
+    "evaluated_sparse_rates": 2,
+    "mean_accuracy_delta": -0.004449999999999954,
+    "mean_macro_f1_delta": -0.0020999999999999908,
+    "next_step": "Do not extend V3. Test a V3.1 density-capped distillation weight on 60s first, then retain it only if it beats the same B0."
+  }
+}

@@ -409,6 +409,18 @@ class TrajectoryWithFeatureData(object):
         self.all_IDs = self.feature_data.all_IDs
         self.feature_dfs = self.trajectory_data.feature_dfs + self.feature_data.feature_dfs
         self.labels_df = self.feature_data.labels_df
+        base_dir = f"./data/{self.data_name}_features/{self.data_split}"
+        pair_ids_path = os.path.join(base_dir, 'segment_pair_ids.npy')
+        time_ranges_path = os.path.join(base_dir, 'segment_time_ranges.npy')
+        self.pair_ids = None
+        self.time_ranges = None
+        if os.path.exists(pair_ids_path) and os.path.exists(time_ranges_path):
+            self.pair_ids = np.load(pair_ids_path, allow_pickle=True)
+            self.time_ranges = np.load(time_ranges_path)
+            expected = len(self.labels_df)
+            if len(self.pair_ids) != expected or len(self.time_ranges) != expected:
+                raise ValueError(
+                    f"Pair metadata length does not match labels in {base_dir}")
         logger.info(f"TrajectoryWithFeatureData - feature max_seq_len: {self.feature_data.max_seq_len}, trajectory max_seq_len: {self.trajectory_data.max_seq_len}")
 
 

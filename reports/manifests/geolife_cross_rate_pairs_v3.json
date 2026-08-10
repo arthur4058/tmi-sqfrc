@@ -1,0 +1,123 @@
+{
+  "status": "passed",
+  "rates_seconds": [
+    5,
+    20,
+    60
+  ],
+  "splits": {
+    "train": {
+      "5": {
+        "segments": 46304,
+        "unique_physical_windows": 46304,
+        "class_distribution": {
+          "0": 11010,
+          "1": 7080,
+          "2": 12853,
+          "3": 9933,
+          "4": 5428
+        }
+      },
+      "20": {
+        "segments": 46242,
+        "unique_physical_windows": 46242,
+        "class_distribution": {
+          "0": 10982,
+          "1": 7080,
+          "2": 12852,
+          "3": 9931,
+          "4": 5397
+        },
+        "missing_5s_teacher_windows": 0,
+        "label_mismatches": 0
+      },
+      "60": {
+        "segments": 45672,
+        "unique_physical_windows": 45672,
+        "class_distribution": {
+          "0": 10745,
+          "1": 7053,
+          "2": 12820,
+          "3": 9916,
+          "4": 5138
+        },
+        "missing_5s_teacher_windows": 0,
+        "label_mismatches": 0
+      }
+    },
+    "val": {
+      "5": {
+        "segments": 7043,
+        "unique_physical_windows": 7043,
+        "class_distribution": {
+          "0": 2739,
+          "1": 901,
+          "2": 2020,
+          "3": 1159,
+          "4": 224
+        }
+      },
+      "20": {
+        "segments": 7259,
+        "unique_physical_windows": 7259,
+        "class_distribution": {
+          "0": 2734,
+          "1": 901,
+          "2": 2122,
+          "3": 1159,
+          "4": 343
+        },
+        "missing_5s_teacher_windows": 222
+      },
+      "60": {
+        "segments": 7129,
+        "unique_physical_windows": 7129,
+        "class_distribution": {
+          "0": 2682,
+          "1": 899,
+          "2": 2122,
+          "3": 1158,
+          "4": 268
+        },
+        "missing_5s_teacher_windows": 186
+      }
+    },
+    "test": {
+      "5": {
+        "segments": 4932,
+        "unique_physical_windows": 4932,
+        "class_distribution": {
+          "0": 1370,
+          "1": 573,
+          "2": 640,
+          "3": 2016,
+          "4": 333
+        }
+      },
+      "20": {
+        "segments": 4940,
+        "unique_physical_windows": 4940,
+        "class_distribution": {
+          "0": 1370,
+          "1": 572,
+          "2": 640,
+          "3": 2016,
+          "4": 342
+        },
+        "missing_5s_teacher_windows": 9
+      },
+      "60": {
+        "segments": 4918,
+        "unique_physical_windows": 4918,
+        "class_distribution": {
+          "0": 1356,
+          "1": 571,
+          "2": 638,
+          "3": 2015,
+          "4": 338
+        },
+        "missing_5s_teacher_windows": 8
+      }
+    }
+  }
+}

@@ -30,6 +30,10 @@ from tmi.datasets.data import data_factory, Normalizer
 from tmi.datasets.datasplit import split_dataset
 from tmi.models.loss import get_loss_module
 from tmi.models.models import model_factory
+from tmi.distillation import (
+    CrossRatePairedDataset,
+    collate_cross_rate_superv,
+)
 from tmi.optimizers import get_optimizer
 from tmi.options import Options
 from tmi.runner import setup, pipeline_factory, validate, check_progress, NEG_METRICS
@@ -89,6 +93,8 @@ class TrainingPipeline:
         self.loss_module = None
         self.tensorboard_writer = None
         self.feature_normalizers = None
+        self.teacher_data = None
+        self.teacher_model = None
 
     def _setup_device(self):
         """设置计算设备"""
@@ -116,6 +122,25 @@ class TrainingPipeline:
             limit_size=self.config['limit_size'], config=train_config, data_split='train')
         self.test_data = data_class(
             limit_size=self.config['limit_size'], config=test_config, data_split='test')
+
+        distillation_training = (
+            self.config.get('cross_rate_distillation', False)
+            and self.config.get('test_only') != 'testset'
+        )
+        if distillation_training:
+            teacher_config = dict(self.config)
+            teacher_config['data_name'] = self.config[
+                'distillation_teacher_data_name']
+            teacher_config['sampling_quality_reliability'] = False
+            teacher_config['physical_time_multiscale'] = False
+            self.teacher_data = data_class(
+                # A student-side smoke-test limit is index-based and does not
+                # select the same physical windows after rate-dependent S4
+                # segmentation. Keep the complete dense teacher pool available.
+                limit_size=None,
+                config=teacher_config,
+                data_split='train',
+            )
 
         # 2. 分割数据集
         self.test_indices = self.test_data.all_IDs
@@ -162,6 +187,32 @@ class TrainingPipeline:
         
         # 5. 对特征进行预处理
         self._preprocess_features()
+        if self.teacher_data is not None:
+            self._preprocess_distillation_teacher()
+
+    def _preprocess_distillation_teacher(self):
+        """Validate pairing and reproduce the dense teacher normalization."""
+        if self.train_data.pair_ids is None or self.teacher_data.pair_ids is None:
+            raise ValueError(
+                "Dense teacher and sparse student pair metadata is missing")
+        teacher_pairs = set(map(str, self.teacher_data.pair_ids))
+        student_pairs = {
+            str(self.train_data.pair_ids[int(item)])
+            for item in self.train_indices
+        }
+        missing_pairs = student_pairs - teacher_pairs
+        if missing_pairs:
+            raise ValueError(
+                f"Dense teacher is missing {len(missing_pairs)} physical windows")
+        for teacher_df, normalization in self.teacher_data.feature_dfs:
+            normalizer = Normalizer(normalization)
+            teacher_ids = self.teacher_data.all_IDs
+            teacher_df.loc[teacher_ids] = normalizer.normalize(
+                teacher_df.loc[teacher_ids])
+        logger.info(
+            "Validated paired dense/sparse physical windows; "
+            "normalized teacher data using teacher-train statistics only"
+        )
     
     def _save_data_indices(self):
         """保存数据分割索引"""
@@ -214,6 +265,27 @@ class TrainingPipeline:
         """创建和初始化深度学习模型"""
         logger.info("Creating model ...")
         self.model = model_factory(self.config, self.train_data)
+
+        if self.teacher_data is not None:
+            teacher_config = dict(self.config)
+            teacher_config['data_name'] = self.config[
+                'distillation_teacher_data_name']
+            teacher_config['sampling_quality_reliability'] = False
+            teacher_config['physical_time_multiscale'] = False
+            self.teacher_model = model_factory(
+                teacher_config, self.teacher_data)
+            self.teacher_model = utils.load_dual_branch_model(
+                self.teacher_model,
+                self.config['distillation_teacher_checkpoint'],
+            )
+            self.teacher_model.to(self.device)
+            self.teacher_model.eval()
+            for parameter in self.teacher_model.parameters():
+                parameter.requires_grad = False
+            logger.info(
+                "Loaded frozen dense teacher from %s",
+                self.config['distillation_teacher_checkpoint'],
+            )
 
         # 检查DualTSTransformerEncoderClassifier模型结构
         from tmi.models.models import DualTSTransformerEncoderClassifier
@@ -365,14 +437,26 @@ class TrainingPipeline:
         )
         
         # 训练集数据加载器
-        train_dataset = self.dataset_class(self.train_data, self.train_indices)
+        if self.teacher_data is not None:
+            from tmi.datasets.dataset import parse_input_type
+            train_dataset = CrossRatePairedDataset(
+                self.train_data,
+                self.teacher_data,
+                self.train_indices,
+                noise_probability=parse_input_type(self.config['input_type']),
+            )
+            train_collate_fn = collate_cross_rate_superv
+        else:
+            train_dataset = self.dataset_class(
+                self.train_data, self.train_indices)
+            train_collate_fn = self.collate_fn
         self.train_loader = DataLoader(
             dataset=train_dataset,
             batch_size=self.config['batch_size'],
             shuffle=True,
             num_workers=self.config['num_workers'],
             pin_memory=True,
-            collate_fn=self.collate_fn,
+            collate_fn=train_collate_fn,
             persistent_workers=self.config['num_workers'] > 0
         )
 
@@ -616,7 +700,8 @@ class TrainingPipeline:
             self.loss_module, 
             self.optimizer, 
             l2_reg=self.output_reg,
-            exp_config=self.config
+            exp_config=self.config,
+            teacher_model=self.teacher_model,
         )
         
         val_evaluator = self.runner_class(

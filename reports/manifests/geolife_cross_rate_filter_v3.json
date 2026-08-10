@@ -1,0 +1,18 @@
+{
+  "policy": "retain sparse train segments whose physical window exists at 5s",
+  "teacher_rate_seconds": 5,
+  "rates": {
+    "20": {
+      "segments_before": 48177,
+      "segments_after": 46242,
+      "segments_removed": 1935,
+      "retained_fraction": 0.9598356062021296
+    },
+    "60": {
+      "segments_before": 47493,
+      "segments_after": 45672,
+      "segments_removed": 1821,
+      "retained_fraction": 0.9616575074221464
+    }
+  }
+}

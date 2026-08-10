@@ -22,6 +22,7 @@ from tmi.datasets.dataset import DenoisingDataset, collate_denoising_unsuperv, c
     GenericClassificationDataset, DenoisingImputationDataset
 from tmi.models.loss import l2_reg_loss, mask_length_regularization_loss
 from tmi.models.models import DualTSTransformerEncoderClassifier
+from tmi.distillation import cross_rate_distillation_terms
 from tmi.utils import utils, analysis
 
 NEG_METRICS = {'loss'}  # metrics for which "better" is less
@@ -178,14 +179,15 @@ def check_progress(epoch):
 
 class BaseRunner(object):
 
-    def __init__(self, model, dataloader, device, loss_module, optimizer=None, 
-                 l2_reg=None, exp_config=None):
+    def __init__(self, model, dataloader, device, loss_module, optimizer=None,
+                 l2_reg=None, exp_config=None, teacher_model=None):
         self.model = model
         self.dataloader = dataloader
         self.device = device
         self.optimizer = optimizer
         self.loss_module = loss_module
         self.l2_reg = l2_reg
+        self.teacher_model = teacher_model
 
         self.exp_config = exp_config
         self.print_interval = self.exp_config['print_interval']
@@ -361,26 +363,77 @@ class SupervisedRunner(BaseRunner):
     def train_epoch(self, epoch_num=None):
 
         self.model = self.model.train()
+        if self.teacher_model is not None:
+            self.teacher_model = self.teacher_model.eval()
 
         epoch_loss = 0  # total loss of epoch
         total_samples = 0  # total samples in epoch
+        diagnostic_sums = OrderedDict()
 
         for i, batch in enumerate(self.dataloader):
             for j, e in enumerate(batch):
                 if isinstance(e, Tensor):
                     batch[j] = e.to(self.device)
-            if self.is_dual_branch:
+            if self.teacher_model is not None:
+                (X1, X2, padding_masks1, padding_masks2,
+                 teacher_X1, teacher_X2, teacher_padding1, teacher_padding2,
+                 targets, IDs) = batch
+                predictions, student_features = self.model(
+                    X1, padding_masks1, X2, padding_masks2,
+                    return_features=True,
+                )
+                with torch.no_grad():
+                    teacher_predictions, teacher_features = self.teacher_model(
+                        teacher_X1, teacher_padding1,
+                        teacher_X2, teacher_padding2,
+                        return_features=True,
+                    )
+                terms = cross_rate_distillation_terms(
+                    predictions,
+                    teacher_predictions,
+                    student_features,
+                    teacher_features,
+                    targets,
+                    self.loss_module,
+                    padding_masks2,
+                    teacher_padding2,
+                    temperature=float(self.exp_config.get(
+                        'distillation_temperature', 4.0)),
+                    logits_weight=float(self.exp_config.get(
+                        'distillation_logits_weight', 0.3)),
+                    feature_weight=float(self.exp_config.get(
+                        'distillation_feature_weight', 0.05)),
+                    confidence_power=float(self.exp_config.get(
+                        'distillation_confidence_power', 1.0)),
+                    minimum_quality_weight=float(self.exp_config.get(
+                        'distillation_minimum_quality_weight', 0.25)),
+                )
+                mean_loss = terms.total
+                batch_loss = mean_loss.detach() * len(targets)
+                metrics = {
+                    "loss": mean_loss.item(),
+                    "supervised_loss": terms.supervised.item(),
+                    "distillation_loss": terms.logits.item(),
+                    "feature_alignment_loss": terms.features.item(),
+                    "teacher_confidence": terms.teacher_confidence.item(),
+                    "student_teacher_density_ratio": terms.density_ratio.item(),
+                }
+            elif self.is_dual_branch:
                 X1, X2, padding_masks1, padding_masks2, targets, IDs = batch  # 0s: ignore
                 # classification: (batch_size, num_classes) of logits
                 predictions = self.model(X1, padding_masks1, X2, padding_masks2)
+                loss = self.loss_module(predictions, targets)
+                batch_loss = torch.sum(loss)
+                mean_loss = batch_loss / len(loss)
+                metrics = {"loss": mean_loss.item()}
             else:
                 X, targets, padding_masks, IDs = batch  # 0s: ignore
                 # 添加feature_masks=None参数保持接口一致
                 predictions = self.model(X, padding_masks, feature_masks=None)  # for CNN1D_Classifier, padding_masks is not used
-
-            loss = self.loss_module(predictions, targets)  # (batch_size,) loss for each sample in the batch
-            batch_loss = torch.sum(loss)
-            mean_loss = batch_loss / len(loss)  # mean loss (over samples) used for optimization
+                loss = self.loss_module(predictions, targets)
+                batch_loss = torch.sum(loss)
+                mean_loss = batch_loss / len(loss)
+                metrics = {"loss": mean_loss.item()}
 
             if self.l2_reg:
                 total_loss = mean_loss + self.l2_reg * l2_reg_loss(self.model)
@@ -400,18 +453,26 @@ class SupervisedRunner(BaseRunner):
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
             self.optimizer.step()
 
-            metrics = {"loss": mean_loss.item()}
             if i % self.print_interval == 0:
                 ending = "" if epoch_num is None else 'Epoch {} '.format(epoch_num)
                 self.print_callback(i, metrics, prefix='Training ' + ending)
 
             with torch.no_grad():
-                total_samples += len(loss)
+                batch_size = len(targets)
+                total_samples += batch_size
                 epoch_loss += batch_loss.item()  # add total loss of batch
+                for name, value in metrics.items():
+                    if name != 'loss':
+                        diagnostic_sums[name] = (
+                            diagnostic_sums.get(name, 0.0)
+                            + value * batch_size
+                        )
 
         epoch_loss = epoch_loss / total_samples  # average loss per sample for whole epoch
         self.epoch_metrics['epoch'] = epoch_num
         self.epoch_metrics['loss'] = epoch_loss
+        for name, total in diagnostic_sums.items():
+            self.epoch_metrics[name] = total / total_samples
         
         # 记录当前学习到的信号增强值
         if hasattr(self.model, 'missing_signal_strength'):
