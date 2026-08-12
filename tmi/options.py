@@ -141,6 +141,17 @@ class Options(object):
         self.parser.add_argument('--sim_noise_sweep', action='store_true',
                                  help='在测试模式下遍历不同类型和档位的模拟噪声进行评估，并汇总结果')
 
+        self.parser.add_argument('--paired_multirate_consistency', action='store_true',
+                                 help='启用V6同窗口稠密/稀疏双视图监督一致性训练')
+        self.parser.add_argument('--paired_dense_data_name', type=str,
+                                 help='V6配对稠密视图数据名称')
+        self.parser.add_argument('--paired_sparse_supervised_weight', type=float,
+                                 default=0.7)
+        self.parser.add_argument('--paired_consistency_weight', type=float,
+                                 default=0.2)
+        self.parser.add_argument('--paired_consistency_ramp_epochs', type=int,
+                                 default=10)
+
     def parse(self):
 
         args = self.parser.parse_args()

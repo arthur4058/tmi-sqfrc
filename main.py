@@ -30,6 +30,10 @@ from tmi.datasets.data import data_factory, Normalizer
 from tmi.datasets.datasplit import split_dataset
 from tmi.models.loss import get_loss_module
 from tmi.models.models import model_factory
+from tmi.paired_consistency import (
+    PairedMultiRateDataset,
+    collate_paired_multirate,
+)
 from tmi.optimizers import get_optimizer
 from tmi.options import Options
 from tmi.runner import setup, pipeline_factory, validate, check_progress, NEG_METRICS
@@ -89,6 +93,7 @@ class TrainingPipeline:
         self.loss_module = None
         self.tensorboard_writer = None
         self.feature_normalizers = None
+        self.paired_dense_data = None
 
     def _setup_device(self):
         """设置计算设备"""
@@ -116,6 +121,16 @@ class TrainingPipeline:
             limit_size=self.config['limit_size'], config=train_config, data_split='train')
         self.test_data = data_class(
             limit_size=self.config['limit_size'], config=test_config, data_split='test')
+
+        paired_training = (
+            self.config.get('paired_multirate_consistency', False)
+            and self.config.get('test_only') != 'testset'
+        )
+        if paired_training:
+            dense_config = dict(self.config)
+            dense_config['data_name'] = self.config['paired_dense_data_name']
+            self.paired_dense_data = data_class(
+                limit_size=None, config=dense_config, data_split='train')
 
         # 2. 分割数据集
         self.test_indices = self.test_data.all_IDs
@@ -162,6 +177,28 @@ class TrainingPipeline:
         
         # 5. 对特征进行预处理
         self._preprocess_features()
+        if self.paired_dense_data is not None:
+            self._preprocess_paired_dense_view()
+
+    def _preprocess_paired_dense_view(self):
+        """Normalize the auxiliary dense view with sparse-train statistics."""
+        if self.train_data.pair_ids is None or self.paired_dense_data.pair_ids is None:
+            raise ValueError("Paired sparse/dense segment metadata is missing")
+        dense_pairs = set(map(str, self.paired_dense_data.pair_ids))
+        sparse_pairs = {
+            str(self.train_data.pair_ids[int(item)]) for item in self.train_indices
+        }
+        missing = sparse_pairs - dense_pairs
+        if missing:
+            raise ValueError(
+                f"Dense view is missing {len(missing)} paired physical windows")
+        for normalizer, (dense_df, _) in zip(
+                self.feature_normalizers, self.paired_dense_data.feature_dfs):
+            dense_ids = self.paired_dense_data.all_IDs
+            dense_df.loc[dense_ids] = normalizer.normalize(dense_df.loc[dense_ids])
+        logger.info(
+            "Validated paired sparse/dense windows and normalized both views "
+            "with sparse-train statistics only")
     
     def _save_data_indices(self):
         """保存数据分割索引"""
@@ -365,14 +402,25 @@ class TrainingPipeline:
         )
         
         # 训练集数据加载器
-        train_dataset = self.dataset_class(self.train_data, self.train_indices)
+        if self.paired_dense_data is not None:
+            from tmi.datasets.dataset import parse_input_type
+            train_dataset = PairedMultiRateDataset(
+                self.train_data,
+                self.paired_dense_data,
+                self.train_indices,
+                noise_probability=parse_input_type(self.config['input_type']),
+            )
+            train_collate_fn = collate_paired_multirate
+        else:
+            train_dataset = self.dataset_class(self.train_data, self.train_indices)
+            train_collate_fn = self.collate_fn
         self.train_loader = DataLoader(
             dataset=train_dataset,
             batch_size=self.config['batch_size'],
             shuffle=True,
             num_workers=self.config['num_workers'],
             pin_memory=True,
-            collate_fn=self.collate_fn,
+            collate_fn=train_collate_fn,
             persistent_workers=self.config['num_workers'] > 0
         )
 
