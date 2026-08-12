@@ -22,6 +22,7 @@ from tmi.datasets.dataset import DenoisingDataset, collate_denoising_unsuperv, c
     GenericClassificationDataset, DenoisingImputationDataset
 from tmi.models.loss import l2_reg_loss, mask_length_regularization_loss
 from tmi.models.models import DualTSTransformerEncoderClassifier
+from tmi.paired_consistency import paired_consistency_terms
 from tmi.utils import utils, analysis
 
 NEG_METRICS = {'loss'}  # metrics for which "better" is less
@@ -364,23 +365,68 @@ class SupervisedRunner(BaseRunner):
 
         epoch_loss = 0  # total loss of epoch
         total_samples = 0  # total samples in epoch
+        diagnostic_sums = OrderedDict()
 
         for i, batch in enumerate(self.dataloader):
             for j, e in enumerate(batch):
                 if isinstance(e, Tensor):
                     batch[j] = e.to(self.device)
-            if self.is_dual_branch:
+            if self.exp_config.get('paired_multirate_consistency', False):
+                (sparse_x1, sparse_x2, sparse_mask1, sparse_mask2,
+                 dense_x1, dense_x2, dense_mask1, dense_mask2,
+                 targets, IDs) = batch
+                # Keep each rate at its natural batch length: downstream
+                # convolution/pooling is not padding-mask aware. Alternate the
+                # order so BatchNorm running statistics are not always updated
+                # by the same rate last.
+                if i % 2 == 0:
+                    sparse_predictions = self.model(
+                        sparse_x1, sparse_mask1, sparse_x2, sparse_mask2)
+                    dense_predictions = self.model(
+                        dense_x1, dense_mask1, dense_x2, dense_mask2)
+                else:
+                    dense_predictions = self.model(
+                        dense_x1, dense_mask1, dense_x2, dense_mask2)
+                    sparse_predictions = self.model(
+                        sparse_x1, sparse_mask1, sparse_x2, sparse_mask2)
+                terms = paired_consistency_terms(
+                    sparse_predictions,
+                    dense_predictions,
+                    targets,
+                    self.loss_module,
+                    epoch=epoch_num or 0,
+                    sparse_supervised_weight=float(self.exp_config.get(
+                        'paired_sparse_supervised_weight', 0.7)),
+                    consistency_weight=float(self.exp_config.get(
+                        'paired_consistency_weight', 0.2)),
+                    ramp_epochs=int(self.exp_config.get(
+                        'paired_consistency_ramp_epochs', 10)),
+                )
+                mean_loss = terms.total
+                batch_loss = mean_loss.detach() * len(targets)
+                metrics = {
+                    'loss': mean_loss.item(),
+                    'sparse_supervised_loss': terms.sparse_supervised.item(),
+                    'dense_supervised_loss': terms.dense_supervised.item(),
+                    'paired_consistency_loss': terms.consistency.item(),
+                    'consistency_ramp': terms.ramp,
+                }
+            elif self.is_dual_branch:
                 X1, X2, padding_masks1, padding_masks2, targets, IDs = batch  # 0s: ignore
                 # classification: (batch_size, num_classes) of logits
                 predictions = self.model(X1, padding_masks1, X2, padding_masks2)
+                loss = self.loss_module(predictions, targets)
+                batch_loss = torch.sum(loss)
+                mean_loss = batch_loss / len(loss)
+                metrics = {"loss": mean_loss.item()}
             else:
                 X, targets, padding_masks, IDs = batch  # 0s: ignore
                 # 添加feature_masks=None参数保持接口一致
                 predictions = self.model(X, padding_masks, feature_masks=None)  # for CNN1D_Classifier, padding_masks is not used
-
-            loss = self.loss_module(predictions, targets)  # (batch_size,) loss for each sample in the batch
-            batch_loss = torch.sum(loss)
-            mean_loss = batch_loss / len(loss)  # mean loss (over samples) used for optimization
+                loss = self.loss_module(predictions, targets)
+                batch_loss = torch.sum(loss)
+                mean_loss = batch_loss / len(loss)
+                metrics = {"loss": mean_loss.item()}
 
             if self.l2_reg:
                 total_loss = mean_loss + self.l2_reg * l2_reg_loss(self.model)
@@ -400,18 +446,24 @@ class SupervisedRunner(BaseRunner):
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
             self.optimizer.step()
 
-            metrics = {"loss": mean_loss.item()}
             if i % self.print_interval == 0:
                 ending = "" if epoch_num is None else 'Epoch {} '.format(epoch_num)
                 self.print_callback(i, metrics, prefix='Training ' + ending)
 
             with torch.no_grad():
-                total_samples += len(loss)
+                batch_size = len(targets)
+                total_samples += batch_size
                 epoch_loss += batch_loss.item()  # add total loss of batch
+                for name, value in metrics.items():
+                    if name != 'loss':
+                        diagnostic_sums[name] = (
+                            diagnostic_sums.get(name, 0.0) + value * batch_size)
 
         epoch_loss = epoch_loss / total_samples  # average loss per sample for whole epoch
         self.epoch_metrics['epoch'] = epoch_num
         self.epoch_metrics['loss'] = epoch_loss
+        for name, total in diagnostic_sums.items():
+            self.epoch_metrics[name] = total / total_samples
         
         # 记录当前学习到的信号增强值
         if hasattr(self.model, 'missing_signal_strength'):
