@@ -47,7 +47,13 @@ def model_factory(config, data):
             dropout=config['dropout'],
             activation=config['activation'],
             sampling_quality_reliability=config.get('sampling_quality_reliability', False),
-            sampling_quality_hidden_dim=config.get('sampling_quality_hidden_dim', 16)
+            sampling_quality_hidden_dim=config.get('sampling_quality_hidden_dim', 16),
+            sparse_physical_motion_fusion=config.get('sparse_physical_motion_fusion', False),
+            sparse_physical_edge_hidden_dim=config.get('sparse_physical_edge_hidden_dim', 32),
+            sparse_physical_alpha_min=config.get('sparse_physical_alpha_min', 0.10),
+            sparse_physical_alpha_max=config.get('sparse_physical_alpha_max', 0.80),
+            sampling_interval_seconds=config.get('sampling_interval_seconds', 5.0),
+            physical_window_seconds=config.get('physical_window_seconds', 300.0)
         )
         
         # 记录日志
@@ -779,7 +785,13 @@ class DualTSTransformerEncoderClassifier(nn.Module):
     """
     def __init__(self, trajectory_branch_hyperparams, feature_branch_hyperparams, num_classes, dropout=0.1,
                  activation='gelu', sampling_quality_reliability=False,
-                 sampling_quality_hidden_dim=16):
+                 sampling_quality_hidden_dim=16,
+                 sparse_physical_motion_fusion=False,
+                 sparse_physical_edge_hidden_dim=32,
+                 sparse_physical_alpha_min=0.10,
+                 sparse_physical_alpha_max=0.80,
+                 sampling_interval_seconds=5.0,
+                 physical_window_seconds=300.0):
         super(DualTSTransformerEncoderClassifier, self).__init__()
         self.num_classes = num_classes
         
@@ -789,6 +801,22 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         self.trajectory_max_len = trajectory_branch_hyperparams.get('max_len')
         self.feature_max_len = feature_branch_hyperparams.get('max_len')
         self.sampling_quality_reliability = sampling_quality_reliability
+        self.sparse_physical_motion_fusion = sparse_physical_motion_fusion
+        self.sparse_physical_feature_dim = 6
+        self.sparse_physical_alpha_min = float(sparse_physical_alpha_min)
+        self.sparse_physical_alpha_max = float(sparse_physical_alpha_max)
+        self.sampling_interval_seconds = float(sampling_interval_seconds)
+        self.physical_window_seconds = float(physical_window_seconds)
+
+        if self.sampling_quality_reliability and self.sparse_physical_motion_fusion:
+            raise ValueError(
+                "sampling_quality_reliability and sparse_physical_motion_fusion "
+                "cannot be enabled together"
+            )
+        if not 0.0 <= self.sparse_physical_alpha_min <= self.sparse_physical_alpha_max:
+            raise ValueError("invalid sparse physical fusion alpha range")
+        if self.sampling_interval_seconds <= 0 or self.physical_window_seconds <= 0:
+            raise ValueError("sampling interval and physical window must be positive")
 
         if self.sampling_quality_reliability:
             # Five descriptors: local standardized delta_t, its magnitude,
@@ -843,6 +871,97 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         self.act = _get_activation_fn(activation)
         self.dropout1 = nn.Dropout(dropout)
 
+        # V5 modules are intentionally constructed after every B0 layer.  A
+        # fixed random seed therefore gives exactly the same B0 backbone, and
+        # the zero-initialized residual projection makes the initial V5 logits
+        # identical to B0 logits.
+        if self.sparse_physical_motion_fusion:
+            edge_dim = int(sparse_physical_edge_hidden_dim)
+            if edge_dim <= 0:
+                raise ValueError("sparse_physical_edge_hidden_dim must be positive")
+            self.sparse_physical_edge_encoder = nn.Sequential(
+                nn.Linear(self.sparse_physical_feature_dim, edge_dim),
+                nn.LayerNorm(edge_dim),
+                nn.GELU(),
+            )
+            self.sparse_physical_stats_encoder = nn.Sequential(
+                nn.Linear(10, edge_dim),
+                nn.LayerNorm(edge_dim),
+                nn.GELU(),
+            )
+            self.sparse_physical_residual = nn.Sequential(
+                nn.Linear(edge_dim * 3, 128),
+                nn.GELU(),
+                nn.Linear(128, 128),
+            )
+            nn.init.zeros_(self.sparse_physical_residual[-1].weight)
+            nn.init.zeros_(self.sparse_physical_residual[-1].bias)
+
+    @staticmethod
+    def _masked_mean(values, valid, count):
+        return (values * valid).sum(dim=1) / count
+
+    def _sparse_physical_alpha(self, padding_mask):
+        """Return a deterministic, monotonic fusion budget for each segment."""
+        count = padding_mask.to(torch.float32).sum(dim=1, keepdim=True).clamp_min(1.0)
+        expected = self.physical_window_seconds / self.sampling_interval_seconds + 1.0
+        missingness = (1.0 - count / expected).clamp(0.0, 1.0)
+        rate_position = math.log(max(self.sampling_interval_seconds, 5.0) / 5.0)
+        rate_position /= math.log(60.0 / 5.0)
+        rate_position = max(0.0, min(1.0, rate_position))
+        sparsity = 0.85 * rate_position + 0.15 * missingness
+        alpha_range = self.sparse_physical_alpha_max - self.sparse_physical_alpha_min
+        return self.sparse_physical_alpha_min + alpha_range * sparsity
+
+    def _encode_sparse_physical_motion(self, physical_features, padding_mask):
+        valid = padding_mask.unsqueeze(-1).to(physical_features.dtype)
+        count = valid.sum(dim=1).clamp_min(1.0)
+        encoded = self.sparse_physical_edge_encoder(physical_features) * valid
+        edge_mean = self._masked_mean(encoded, valid, count)
+        edge_max = encoded.masked_fill(~padding_mask.unsqueeze(-1), -torch.inf).amax(dim=1)
+        edge_max = torch.nan_to_num(edge_max, nan=0.0, posinf=0.0, neginf=0.0)
+
+        log_delta_t = physical_features[..., 0:1]
+        velocity_x = physical_features[..., 1:2]
+        velocity_y = physical_features[..., 2:3]
+        speed = physical_features[..., 3:4]
+        turn_sin = physical_features[..., 4:5]
+        turn_cos = physical_features[..., 5:6]
+
+        def mean(value):
+            return self._masked_mean(value, valid, count)
+
+        def std(value):
+            value_mean = mean(value).unsqueeze(1)
+            return torch.sqrt(mean((value - value_mean).square()) + 1e-6)
+
+        speed_max = speed.masked_fill(~padding_mask.unsqueeze(-1), -torch.inf).amax(dim=1)
+        speed_max = torch.nan_to_num(speed_max, nan=0.0, posinf=0.0, neginf=0.0)
+        turn_concentration = torch.sqrt(mean(turn_sin).square() + mean(turn_cos).square() + 1e-6)
+        density = (
+            count / (self.physical_window_seconds / self.sampling_interval_seconds + 1.0)
+        ).clamp(0.0, 1.0)
+        rate_position = math.log(max(self.sampling_interval_seconds, 5.0) / 5.0)
+        rate_position /= math.log(60.0 / 5.0)
+        rate_feature = physical_features.new_full(
+            (physical_features.size(0), 1), max(0.0, min(1.0, rate_position))
+        )
+        stats = torch.cat([
+            mean(log_delta_t.abs()),
+            std(log_delta_t),
+            mean(speed),
+            speed_max,
+            std(speed),
+            mean(velocity_x.abs()),
+            mean(velocity_y.abs()),
+            turn_concentration,
+            density,
+            rate_feature,
+        ], dim=-1)
+        stats_encoded = self.sparse_physical_stats_encoder(stats)
+        descriptor = torch.cat([edge_mean, edge_max, stats_encoded], dim=-1)
+        return self.sparse_physical_residual(descriptor)
+
     def forward(self, X1, padding_mask1, X2, padding_mask2):
         """
         双分支转换器分类器的前向传播
@@ -857,6 +976,7 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             output: 分类结果，形状 (batch_size, num_classes)
         """
         batch_size = X1.size(0)
+        physical_features = None
 
         if self.sampling_quality_reliability:
             expected_dim = self.feature_feat_dim + 1
@@ -890,6 +1010,16 @@ class DualTSTransformerEncoderClassifier(nn.Module):
                 self.sampling_quality_gate(quality_descriptor)
             )
             X2 = motion_features * reliability
+        elif self.sparse_physical_motion_fusion:
+            expected_dim = self.feature_feat_dim + self.sparse_physical_feature_dim
+            if X2.size(-1) != expected_dim:
+                raise ValueError(
+                    "sparse physical motion fusion expects "
+                    f"{expected_dim} feature channels (motion + physical), "
+                    f"got {X2.size(-1)}"
+                )
+            physical_features = X2[..., self.feature_feat_dim:]
+            X2 = X2[..., :self.feature_feat_dim]
         
         # 获取两个分支的特征表示
         trajectory_output = self.trajectory_branch(X1, padding_mask1)  # (batch_size, seq_len*d_model)
@@ -916,6 +1046,13 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         
         # 融合池化结果
         pooled_features = torch.cat([avg_pooled, max_pooled], dim=1)  # (batch_size, 128)
+
+        if self.sparse_physical_motion_fusion:
+            physical_residual = self._encode_sparse_physical_motion(
+                physical_features, padding_mask2
+            )
+            alpha = self._sparse_physical_alpha(padding_mask2).to(pooled_features.dtype)
+            pooled_features = pooled_features + alpha * physical_residual
         
         # 分类
         output = self.classifier(pooled_features)  # (batch_size, num_classes)

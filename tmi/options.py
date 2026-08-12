@@ -133,6 +133,13 @@ class Options(object):
         delta_t, hour, distance, velocity, acceleration, jerk, heading, heading_change, heading_change_rate
         '''
         self.parser.add_argument('--motion_features', type=str, default='3,4,5,8')
+        self.parser.add_argument('--sparse_physical_motion_fusion', action='store_true',
+                                 help='Enable V5 sparse physical-motion residual fusion.')
+        self.parser.add_argument('--sparse_physical_edge_hidden_dim', type=int, default=32)
+        self.parser.add_argument('--sparse_physical_alpha_min', type=float, default=0.10)
+        self.parser.add_argument('--sparse_physical_alpha_max', type=float, default=0.80)
+        self.parser.add_argument('--sampling_interval_seconds', type=float, default=5.0)
+        self.parser.add_argument('--physical_window_seconds', type=float, default=300.0)
         self.parser.add_argument('--patience', type=int, default=60)
         self.parser.add_argument('--class_names', type=str, default="Walk,Bike,Bus,Car,Train",
                                   help='逗号分隔的类别名称列表，按索引顺序对应标签值')

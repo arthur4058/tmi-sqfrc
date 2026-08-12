@@ -158,6 +158,26 @@ class FeatureData(object):
             if quality_feature in use_features:
                 use_features.remove(quality_feature)
             use_features.append(quality_feature)
+        if config.get('sparse_physical_motion_fusion', False):
+            self.all_noise_df = append_sparse_physical_features(self.all_noise_df)
+            self.all_clean_df = append_sparse_physical_features(self.all_clean_df)
+
+            # Masks only describe whether a descriptor is observed.  The
+            # derived features inherit the masks of their raw dependencies.
+            dependency_masks = {
+                "v5_log_delta_t": [0],
+                "v5_velocity_x": [0, 2, 6],
+                "v5_velocity_y": [0, 2, 6],
+                "v5_physical_speed": [0, 2],
+                "v5_turn_sin": [7],
+                "v5_turn_cos": [7],
+            }
+            for name, dependencies in dependency_masks.items():
+                mask = self.all_masks_df[dependencies[0]].astype(bool)
+                for dependency in dependencies[1:]:
+                    mask = mask & self.all_masks_df[dependency].astype(bool)
+                self.all_masks_df[name] = mask
+            use_features.extend(SPARSE_PHYSICAL_FEATURES)
         self.all_noise_df = self.all_noise_df[use_features]
         self.all_clean_df = self.all_clean_df[use_features]
         self.all_masks_df = self.all_masks_df[use_features]
@@ -421,3 +441,37 @@ data_factory = {
 if __name__ == '__main__':
     TrajectoryWithFeatureData()
     print()
+
+SPARSE_PHYSICAL_FEATURES = (
+    "v5_log_delta_t",
+    "v5_velocity_x",
+    "v5_velocity_y",
+    "v5_physical_speed",
+    "v5_turn_sin",
+    "v5_turn_cos",
+)
+
+
+def append_sparse_physical_features(frame):
+    """Build label-free physical-motion descriptors from the raw S4 channels."""
+    result = frame.copy()
+    delta_t = frame[0].astype(float).clip(lower=0.0)
+    distance = frame[2].astype(float).clip(lower=0.0)
+    safe_delta_t = delta_t.clip(lower=1e-6)
+    speed = distance / safe_delta_t
+    heading = np.deg2rad(frame[6].astype(float))
+    heading_change = np.deg2rad(frame[7].astype(float))
+
+    values = {
+        "v5_log_delta_t": np.log1p(delta_t),
+        "v5_velocity_x": speed * np.cos(heading),
+        "v5_velocity_y": speed * np.sin(heading),
+        "v5_physical_speed": speed,
+        "v5_turn_sin": np.sin(heading_change),
+        "v5_turn_cos": np.cos(heading_change),
+    }
+    for name, value in values.items():
+        result[name] = np.nan_to_num(
+            value.to_numpy(), nan=0.0, posinf=0.0, neginf=0.0
+        )
+    return result
