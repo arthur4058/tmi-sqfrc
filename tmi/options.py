@@ -45,8 +45,8 @@ class Options(object):
                                  help="Limit  dataset to specified smaller random sample, e.g. for rapid debugging purposes. "
                                       "If in [0,1], it will be interpreted as a proportion of the dataset, "
                                       "otherwise as an integer absolute number of samples")
-        self.parser.add_argument('--test_only', choices={'testset'},
-                                 help='If set, no training will take place; instead, trained model will be loaded and evaluated on test set')
+        self.parser.add_argument('--test_only', choices={'testset', 'valset'},
+                                 help='If set, skip training and evaluate a loaded model on the selected split')
         self.parser.add_argument('--data_name', type=str, help='dataset name')
         self.parser.add_argument('--data_class', type=str,
                                  choices={'feature', 'trajectory', 'trajectory_with_feature'},
@@ -140,6 +140,20 @@ class Options(object):
                                  help='在测试模式下遍历多个噪声级别(0%%-100%%)进行评估，并汇总结果')
         self.parser.add_argument('--sim_noise_sweep', action='store_true',
                                  help='在测试模式下遍历不同类型和档位的模拟噪声进行评估，并汇总结果')
+        self.parser.add_argument('--masked_fusion_pooling', action='store_true',
+                                 help='Exclude padded timesteps from dual-branch fusion pooling')
+        self.parser.add_argument('--sparse_trajectory_residual', action='store_true',
+                                 help='Add a gated relative-motion residual for sparse trajectories')
+        self.parser.add_argument('--sparse_trajectory_logit_correction', action='store_true',
+                                 help='Add a gated relative-motion correction to class logits')
+        self.parser.add_argument('--freeze_base_model_for_sparse', action='store_true',
+                                 help='Freeze a loaded B0 model and train only sparse correction modules')
+        self.parser.add_argument('--sparse_trajectory_correction_scale', type=float, default=1.0,
+                                 help='Shrinkage factor in [0, 1] for sparse logit correction')
+        self.parser.add_argument('--sparse_physical_only', action='store_true',
+                                 help='Exclude trajectory Transformer states from sparse correction')
+        self.parser.add_argument('--sparse_trajectory_hidden_dim', type=int, default=32)
+        self.parser.add_argument('--sparse_trajectory_gate_init', type=float, default=0.1)
 
     def parse(self):
 

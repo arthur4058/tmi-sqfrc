@@ -47,7 +47,21 @@ def model_factory(config, data):
             dropout=config['dropout'],
             activation=config['activation'],
             sampling_quality_reliability=config.get('sampling_quality_reliability', False),
-            sampling_quality_hidden_dim=config.get('sampling_quality_hidden_dim', 16)
+            sampling_quality_hidden_dim=config.get('sampling_quality_hidden_dim', 16),
+            masked_fusion_pooling=config.get('masked_fusion_pooling', False),
+            sparse_trajectory_residual=config.get('sparse_trajectory_residual', False),
+            sparse_trajectory_logit_correction=config.get(
+                'sparse_trajectory_logit_correction', False
+            ),
+            freeze_base_model_for_sparse=config.get(
+                'freeze_base_model_for_sparse', False
+            ),
+            sparse_trajectory_correction_scale=config.get(
+                'sparse_trajectory_correction_scale', 1.0
+            ),
+            sparse_physical_only=config.get('sparse_physical_only', False),
+            sparse_trajectory_hidden_dim=config.get('sparse_trajectory_hidden_dim', 32),
+            sparse_trajectory_gate_init=config.get('sparse_trajectory_gate_init', 0.1)
         )
         
         # 记录日志
@@ -779,7 +793,13 @@ class DualTSTransformerEncoderClassifier(nn.Module):
     """
     def __init__(self, trajectory_branch_hyperparams, feature_branch_hyperparams, num_classes, dropout=0.1,
                  activation='gelu', sampling_quality_reliability=False,
-                 sampling_quality_hidden_dim=16):
+                 sampling_quality_hidden_dim=16, masked_fusion_pooling=False,
+                 sparse_trajectory_residual=False, sparse_trajectory_hidden_dim=32,
+                 sparse_trajectory_gate_init=0.1,
+                 sparse_trajectory_logit_correction=False,
+                 freeze_base_model_for_sparse=False,
+                 sparse_trajectory_correction_scale=1.0,
+                 sparse_physical_only=False):
         super(DualTSTransformerEncoderClassifier, self).__init__()
         self.num_classes = num_classes
         
@@ -789,6 +809,23 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         self.trajectory_max_len = trajectory_branch_hyperparams.get('max_len')
         self.feature_max_len = feature_branch_hyperparams.get('max_len')
         self.sampling_quality_reliability = sampling_quality_reliability
+        self.masked_fusion_pooling = masked_fusion_pooling
+        self.sparse_trajectory_residual = sparse_trajectory_residual
+        self.sparse_trajectory_logit_correction = sparse_trajectory_logit_correction
+        self.freeze_base_model_for_sparse = freeze_base_model_for_sparse
+        self.sparse_trajectory_correction_scale = float(
+            sparse_trajectory_correction_scale
+        )
+        self.sparse_physical_only = sparse_physical_only
+        if not 0.0 <= self.sparse_trajectory_correction_scale <= 1.0:
+            raise ValueError(
+                "sparse_trajectory_correction_scale must be in [0, 1]"
+            )
+
+        if sparse_trajectory_residual and sparse_trajectory_logit_correction:
+            raise ValueError(
+                "choose either pooled residual or logit correction, not both"
+            )
 
         if self.sampling_quality_reliability:
             # Five descriptors: local standardized delta_t, its magnitude,
@@ -839,9 +876,141 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             nn.Dropout(dropout),
             nn.Linear(128, num_classes)
         )
+
+        if self.sparse_trajectory_residual or self.sparse_trajectory_logit_correction:
+            # Optional parameters must not change the DataLoader shuffle stream.
+            # Restore the CPU RNG after initializing this additive module so a
+            # same-seed comparison sees the exact same minibatch order as B0.
+            sparse_rng_state = torch.random.get_rng_state()
+            if not 0.0 < sparse_trajectory_gate_init < 1.0:
+                raise ValueError("sparse_trajectory_gate_init must be in (0, 1)")
+            self.sparse_motion_encoder = nn.Sequential(
+                nn.Linear(3, sparse_trajectory_hidden_dim),
+                nn.LayerNorm(sparse_trajectory_hidden_dim),
+                nn.GELU(),
+                nn.Linear(sparse_trajectory_hidden_dim, sparse_trajectory_hidden_dim),
+                nn.GELU()
+            )
+            sparse_summary_dim = (
+                2 * sparse_trajectory_hidden_dim + 5
+                if self.sparse_physical_only
+                else 2 * self.trajectory_d_model + 2 * sparse_trajectory_hidden_dim
+            )
+            self.sparse_residual_projector = nn.Sequential(
+                nn.Linear(sparse_summary_dim, 128),
+                nn.GELU(),
+                nn.Dropout(dropout),
+                nn.Linear(
+                    128,
+                    num_classes if sparse_trajectory_logit_correction else 128
+                )
+            )
+            self.sparse_quality_gate = nn.Sequential(
+                nn.Linear(5, sparse_trajectory_hidden_dim),
+                nn.GELU(),
+                nn.Linear(sparse_trajectory_hidden_dim, 1)
+            )
+            nn.init.zeros_(self.sparse_residual_projector[-1].weight)
+            nn.init.zeros_(self.sparse_residual_projector[-1].bias)
+            nn.init.zeros_(self.sparse_quality_gate[-1].weight)
+            nn.init.constant_(
+                self.sparse_quality_gate[-1].bias,
+                math.log(sparse_trajectory_gate_init / (1.0 - sparse_trajectory_gate_init))
+            )
+            torch.random.set_rng_state(sparse_rng_state)
         
         self.act = _get_activation_fn(activation)
         self.dropout1 = nn.Dropout(dropout)
+
+        if self.freeze_base_model_for_sparse:
+            if not self.sparse_trajectory_logit_correction:
+                raise ValueError(
+                    "freeze_base_model_for_sparse requires logit correction"
+                )
+            for module in self._base_modules():
+                for parameter in module.parameters():
+                    parameter.requires_grad = False
+
+    def _base_modules(self):
+        return (
+            self.trajectory_branch,
+            self.feature_branch,
+            self.conv_layers,
+            self.classifier,
+        )
+
+    def train(self, mode=True):
+        super().train(mode)
+        if mode and self.freeze_base_model_for_sparse:
+            # Frozen BatchNorm/dropout must retain the exact B0 inference state.
+            for module in self._base_modules():
+                module.eval()
+        return self
+
+    @staticmethod
+    def _masked_mean_max(sequence, valid_mask):
+        """Pool a (B, L, C) sequence without padding contributions."""
+        if sequence.size(1) == 0:
+            empty = sequence.new_zeros((sequence.size(0), sequence.size(2)))
+            return empty, empty.clone()
+        valid = valid_mask.unsqueeze(-1)
+        valid_float = valid.to(sequence.dtype)
+        count = valid_float.sum(dim=1).clamp_min(1.0)
+        mean = (sequence * valid_float).sum(dim=1) / count
+        lowest = torch.finfo(sequence.dtype).min
+        maximum = sequence.masked_fill(~valid, lowest).amax(dim=1)
+        has_valid = valid_mask.any(dim=1, keepdim=True)
+        maximum = torch.where(has_valid, maximum, torch.zeros_like(maximum))
+        return mean, maximum
+
+    def _sparse_trajectory_summary(self, X1, padding_mask1, trajectory_output):
+        pair_mask = padding_mask1[:, 1:] & padding_mask1[:, :-1]
+        displacement = X1[:, 1:, :2] - X1[:, :-1, :2]
+        distance = torch.linalg.vector_norm(displacement, dim=-1, keepdim=True)
+        relative_motion = self.sparse_motion_encoder(
+            torch.cat([displacement, distance], dim=-1)
+        )
+
+        motion_mean, motion_max = self._masked_mean_max(relative_motion, pair_mask)
+        trajectory_mean, trajectory_max = self._masked_mean_max(
+            trajectory_output, padding_mask1
+        )
+        pair_valid = pair_mask.unsqueeze(-1).to(distance.dtype)
+        pair_count = pair_valid.sum(dim=1).clamp_min(1.0)
+        mean_step = (distance * pair_valid).sum(dim=1) / pair_count
+        step_variance = (
+            (distance - mean_step.unsqueeze(1)).square() * pair_valid
+        ).sum(dim=1) / pair_count
+        step_std = torch.sqrt(step_variance + 1e-6)
+        path_length = (distance * pair_valid).sum(dim=1)
+
+        valid_count = padding_mask1.sum(dim=1, keepdim=True).to(distance.dtype)
+        first = X1[:, 0, :2]
+        last_index = (valid_count.long() - 1).clamp_min(0)
+        last = X1.gather(
+            1, last_index.unsqueeze(-1).expand(-1, 1, 2)
+        ).squeeze(1)
+        net_displacement = torch.linalg.vector_norm(last - first, dim=-1, keepdim=True)
+        straightness = (
+            net_displacement / path_length.clamp_min(1e-6)
+        ).clamp(0.0, 1.0)
+        valid_fraction = valid_count / float(max(X1.size(1), 1))
+        pair_fraction = pair_mask.sum(dim=1, keepdim=True).to(distance.dtype) \
+            / float(max(X1.size(1) - 1, 1))
+        quality = torch.cat([
+            valid_fraction, pair_fraction, mean_step, step_std, straightness
+        ], dim=-1)
+        if self.sparse_physical_only:
+            sparse_summary = torch.cat([
+                motion_mean, motion_max, quality
+            ], dim=-1)
+        else:
+            sparse_summary = torch.cat([
+                trajectory_mean, trajectory_max, motion_mean, motion_max
+            ], dim=-1)
+        residual = self.sparse_residual_projector(sparse_summary)
+        gate = torch.sigmoid(self.sparse_quality_gate(quality))
+        return residual, gate
 
     def forward(self, X1, padding_mask1, X2, padding_mask2):
         """
@@ -857,6 +1026,14 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             output: 分类结果，形状 (batch_size, num_classes)
         """
         batch_size = X1.size(0)
+
+        if self.masked_fusion_pooling and (
+            padding_mask1.shape != padding_mask2.shape
+            or X1.size(1) != X2.size(1)
+        ):
+            raise ValueError(
+                "masked fusion pooling requires aligned trajectory and feature lengths"
+            )
 
         if self.sampling_quality_reliability:
             expected_dim = self.feature_feat_dim + 1
@@ -900,6 +1077,13 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             batch_size, X1.size(1), self.trajectory_d_model)
         feature_output = feature_output.view(
             batch_size, X2.size(1), self.feature_d_model)
+
+        sparse_residual = None
+        sparse_gate = None
+        if self.sparse_trajectory_residual or self.sparse_trajectory_logit_correction:
+            sparse_residual, sparse_gate = self._sparse_trajectory_summary(
+                X1, padding_mask1, trajectory_output
+            )
         
         # 在特征维度上拼接
         combined_output = torch.cat([trajectory_output, feature_output], dim=2)
@@ -909,16 +1093,42 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         
         # 应用卷积层
         conv_output = self.conv_layers(combined_output)  # (batch_size, 64, seq_len/2)
-        
-        # 应用全局池化
-        avg_pooled = self.global_avg_pool(conv_output).squeeze(-1)  # (batch_size, 64)
-        max_pooled = self.global_max_pool(conv_output).squeeze(-1)  # (batch_size, 64)
+
+        if self.masked_fusion_pooling:
+            joint_mask = padding_mask1 & padding_mask2
+            pooled_mask = F.max_pool1d(
+                joint_mask.unsqueeze(1).to(conv_output.dtype),
+                kernel_size=2,
+                stride=2
+            ).squeeze(1).bool()
+            avg_pooled, max_pooled = self._masked_mean_max(
+                conv_output.permute(0, 2, 1), pooled_mask
+            )
+        else:
+            avg_pooled = self.global_avg_pool(conv_output).squeeze(-1)
+            max_pooled = self.global_max_pool(conv_output).squeeze(-1)
         
         # 融合池化结果
         pooled_features = torch.cat([avg_pooled, max_pooled], dim=1)  # (batch_size, 128)
+
+        if sparse_residual is not None and self.sparse_trajectory_residual:
+            pooled_features = pooled_features + sparse_gate * sparse_residual
+
+        if sparse_residual is not None:
+            # Expose compact diagnostics without retaining the autograd graph.
+            self.last_sparse_gate_mean = sparse_gate.detach().mean().item()
+            self.last_sparse_residual_norm = (
+                sparse_residual.detach().norm(dim=1).mean().item()
+            )
         
         # 分类
         output = self.classifier(pooled_features)  # (batch_size, num_classes)
+        if sparse_residual is not None and self.sparse_trajectory_logit_correction:
+            output = output + (
+                self.sparse_trajectory_correction_scale
+                * sparse_gate
+                * sparse_residual
+            )
         
         return output
 

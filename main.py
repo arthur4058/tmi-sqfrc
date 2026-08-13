@@ -342,7 +342,7 @@ class TrainingPipeline:
         train_cache_path = os.path.join(cache_dir, f'train_loader_bs{batch_size}.pkl')
         
         # 测试集数据加载器
-        if self.config['test_only'] == 'testset' or self.config['task'] == 'ml_classification':
+        if self.config['test_only'] in {'testset', 'valset'} or self.config['task'] == 'ml_classification':
             test_dataset = self.dataset_class(self.test_data, self.test_indices)
             self.test_loader = DataLoader(
                 dataset=test_dataset,
@@ -595,9 +595,14 @@ class TrainingPipeline:
             
         else:
             # 原始单一noise level测试逻辑
+            evaluation_loader = (
+                self.val_loader
+                if self.config['test_only'] == 'valset'
+                else self.test_loader
+            )
             test_evaluator = self.runner_class(
                 self.model, 
-                self.test_loader, 
+                evaluation_loader,
                 self.device, 
                 self.loss_module,
                 exp_config=self.config
@@ -1144,7 +1149,7 @@ class TrainingPipeline:
             # 设置机器学习模型
             self.setup_ml_model()
             
-            if self.config['test_only'] == 'testset':
+            if self.config['test_only'] in {'testset', 'valset'}:
                 # 仅在测试集上评估机器学习模型
                 test_results = self.evaluate_ml_test()
                 logger.info('机器学习模型测试完成!')
@@ -1164,7 +1169,7 @@ class TrainingPipeline:
             # 创建深度学习模型
             self.setup_dl_model()
             
-            if self.config['test_only'] == 'testset':
+            if self.config['test_only'] in {'testset', 'valset'}:
                 # 仅在测试集上评估深度学习模型
                 self.evaluate_dl_test()
                 logger.info('深度学习模型测试完成!')
