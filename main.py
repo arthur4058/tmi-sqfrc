@@ -331,6 +331,13 @@ class TrainingPipeline:
         """准备数据加载器，区分ML和DL模型的需求"""
         # 设置数据加载器
         self.dataset_class, self.collate_fn, self.runner_class = pipeline_factory(self.config)
+
+        # Flatten-based single-branch classifiers build their output layer from
+        # the global training sequence length. Pad every mini-batch to that same
+        # length so a short final batch cannot change the flattened dimension.
+        if self.collate_fn.__name__ == 'collate_generic_superv':
+            self.collate_fn = partial(
+                self.collate_fn, max_len=self.train_data.max_seq_len)
         
         # 创建缓存目录
         cache_dir = f'./data/dataloader_cache/{self.config["data_name"]}/{self.config["data_class"]}'
