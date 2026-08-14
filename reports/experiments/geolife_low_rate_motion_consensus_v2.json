@@ -1,0 +1,35 @@
+{
+  "protocol": "geolife-low-rate-three-expert-v2",
+  "seed": 10086,
+  "selection_split": "user-disjoint-validation",
+  "test_touched_during_selection": false,
+  "target_rates_seconds": [30, 60],
+  "rates": {
+    "30": {
+      "weights": {
+        "baseline": 0.68,
+        "four_feature_expert": 0.0,
+        "motion_expert": 0.32
+      },
+      "baseline_accuracy": 0.7289473684210527,
+      "consensus_accuracy": 0.7380566801619434,
+      "accuracy_delta": 0.009109311740890691,
+      "baseline_macro_f1": 0.6726570232872745,
+      "consensus_macro_f1": 0.6847113180940831,
+      "macro_f1_delta": 0.01205429480680864
+    },
+    "60": {
+      "weights": {
+        "baseline": 0.24,
+        "four_feature_expert": 0.14,
+        "motion_expert": 0.62
+      },
+      "baseline_accuracy": 0.7155347702318016,
+      "consensus_accuracy": 0.7248881659211062,
+      "accuracy_delta": 0.0093533956893046,
+      "baseline_macro_f1": 0.6373460933052366,
+      "consensus_macro_f1": 0.6600421292791709,
+      "macro_f1_delta": 0.022696035973934325
+    }
+  }
+}
