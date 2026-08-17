@@ -1,0 +1,50 @@
+{
+  "protocol": "geolife-class-aware-stacking-v8",
+  "sampling_interval_seconds": 60,
+  "seed": 10086,
+  "selection_split": "user-disjoint-validation",
+  "test_touched_during_selection": false,
+  "samples": {
+    "train": 62786,
+    "validation": 7129,
+    "test": 4918
+  },
+  "selected": {
+    "C": 0.01,
+    "balance_power": 0.25,
+    "parameters": 80
+  },
+  "validation": {
+    "v2": {
+      "accuracy": 0.7473698976013466,
+      "macro_f1": 0.6718538036048254
+    },
+    "v8_oof": {
+      "accuracy": 0.7668677233833637,
+      "macro_f1": 0.6991677401779227
+    },
+    "v8_refit": {
+      "accuracy": 0.7667274512554355,
+      "macro_f1": 0.698596648286715
+    }
+  },
+  "test": {
+    "baseline": {
+      "accuracy": 0.7155347702318016,
+      "macro_f1": 0.6373460933052366
+    },
+    "v2": {
+      "accuracy": 0.7248881659211062,
+      "macro_f1": 0.6600421292791709
+    },
+    "v8": {
+      "accuracy": 0.7257015046766978,
+      "macro_f1": 0.6494534368571363
+    }
+  },
+  "decision": {
+    "adopt_v8": false,
+    "recommended_version": "V2",
+    "reason": "V8 improves test accuracy by 0.0813 pp over V2 but reduces macro-F1 by 1.0589 pp"
+  }
+}
