@@ -61,7 +61,18 @@ def model_factory(config, data):
             ),
             sparse_physical_only=config.get('sparse_physical_only', False),
             sparse_trajectory_hidden_dim=config.get('sparse_trajectory_hidden_dim', 32),
-            sparse_trajectory_gate_init=config.get('sparse_trajectory_gate_init', 0.1)
+            sparse_trajectory_gate_init=config.get('sparse_trajectory_gate_init', 0.1),
+            sampling_aware_multiscale_motion=config.get(
+                'sampling_aware_multiscale_motion', False
+            ),
+            sampling_interval_seconds=config.get('sampling_interval_seconds', 5),
+            sampling_motion_horizons_seconds=config.get(
+                'sampling_motion_horizons_seconds', [60, 120, 300]
+            ),
+            sampling_motion_hidden_dim=config.get('sampling_motion_hidden_dim', 32),
+            sampling_motion_gate_max=config.get('sampling_motion_gate_max', 0.5),
+            sampling_motion_gate_init=config.get('sampling_motion_gate_init', 0.1),
+            sampling_motion_base_indices=config.get('sampling_motion_base_indices', [2, 3, 4, 6])
         )
         
         # 记录日志
@@ -787,6 +798,31 @@ class TSTransformerEncoderForDualBranch(TSTransformerEncoder):
         return flattened
 
 
+class ECATemporalChannelAttention(nn.Module):
+    """Lightweight ECA channel weighting for a masked temporal sequence."""
+
+    def __init__(self, kernel_size=3):
+        super().__init__()
+        if kernel_size % 2 == 0:
+            raise ValueError("ECA kernel_size must be odd")
+        self.conv = nn.Conv1d(
+            1, 1, kernel_size=kernel_size,
+            padding=(kernel_size - 1) // 2, bias=False
+        )
+
+    def forward(self, sequence, valid_mask):
+        """Args: sequence (B, C, L), valid_mask (B, L)."""
+        if sequence.ndim != 3 or valid_mask.ndim != 2:
+            raise ValueError("ECA expects sequence (B,C,L) and mask (B,L)")
+        valid = valid_mask.unsqueeze(1).to(sequence.dtype)
+        count = valid.sum(dim=2).clamp_min(1.0)
+        descriptor = (sequence * valid).sum(dim=2) / count
+        weights = torch.sigmoid(
+            self.conv(descriptor.unsqueeze(1)).squeeze(1)
+        )
+        return sequence * weights.unsqueeze(-1)
+
+
 class DualTSTransformerEncoderClassifier(nn.Module):
     """
     双分支Transformer编码器分类器，结合轨迹和特征两个分支的信息。
@@ -799,7 +835,13 @@ class DualTSTransformerEncoderClassifier(nn.Module):
                  sparse_trajectory_logit_correction=False,
                  freeze_base_model_for_sparse=False,
                  sparse_trajectory_correction_scale=1.0,
-                 sparse_physical_only=False):
+                 sparse_physical_only=False,
+                 sampling_aware_multiscale_motion=False,
+                 sampling_interval_seconds=5,
+                 sampling_motion_horizons_seconds=(60, 120, 300),
+                 sampling_motion_hidden_dim=32, sampling_motion_gate_max=0.5,
+                 sampling_motion_gate_init=0.1,
+                 sampling_motion_base_indices=(2, 3, 4, 6)):
         super(DualTSTransformerEncoderClassifier, self).__init__()
         self.num_classes = num_classes
         
@@ -817,6 +859,25 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             sparse_trajectory_correction_scale
         )
         self.sparse_physical_only = sparse_physical_only
+        self.sampling_aware_multiscale_motion = bool(
+            sampling_aware_multiscale_motion
+        )
+        self.sampling_interval_seconds = float(sampling_interval_seconds)
+        self.sampling_motion_horizons_seconds = tuple(
+            float(value) for value in sampling_motion_horizons_seconds
+        )
+        self.sampling_motion_hidden_dim = int(sampling_motion_hidden_dim)
+        self.sampling_motion_gate_max = float(sampling_motion_gate_max)
+        self.sampling_motion_gate_init = float(sampling_motion_gate_init)
+        self.sampling_motion_base_indices = tuple(
+            int(value) for value in sampling_motion_base_indices
+        )
+        if self.sampling_interval_seconds <= 0:
+            raise ValueError("sampling_interval_seconds must be positive")
+        if not 0 < self.sampling_motion_gate_init < self.sampling_motion_gate_max <= 1:
+            raise ValueError(
+                "sampling motion gate requires 0 < init < max <= 1"
+            )
         if not 0.0 <= self.sparse_trajectory_correction_scale <= 1.0:
             raise ValueError(
                 "sparse_trajectory_correction_scale must be in [0, 1]"
@@ -876,6 +937,67 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             nn.Dropout(dropout),
             nn.Linear(128, num_classes)
         )
+
+        if self.sampling_aware_multiscale_motion:
+            motion_rng_state = torch.random.get_rng_state()
+            if len(self.sampling_motion_base_indices) != self.feature_feat_dim:
+                raise ValueError(
+                    "sampling_motion_base_indices must preserve the B0 feature width"
+                )
+            if not self.sampling_motion_horizons_seconds:
+                raise ValueError("at least one physical motion horizon is required")
+            self.sampling_motion_kernel_sizes = tuple(
+                max(1, int(round(horizon / self.sampling_interval_seconds)))
+                for horizon in self.sampling_motion_horizons_seconds
+            )
+            motion_input_dim = 7
+            self.sampling_motion_branches = nn.ModuleList()
+            self.sampling_motion_attentions = nn.ModuleList()
+            for kernel_size in self.sampling_motion_kernel_sizes:
+                self.sampling_motion_branches.append(nn.Sequential(
+                    nn.Conv1d(
+                        motion_input_dim,
+                        self.sampling_motion_hidden_dim,
+                        kernel_size=kernel_size,
+                        padding='same'
+                    ),
+                    nn.BatchNorm1d(self.sampling_motion_hidden_dim),
+                    nn.GELU(),
+                    nn.Conv1d(
+                        self.sampling_motion_hidden_dim,
+                        self.sampling_motion_hidden_dim,
+                        kernel_size=1
+                    ),
+                    nn.GELU(),
+                ))
+                self.sampling_motion_attentions.append(
+                    ECATemporalChannelAttention(kernel_size=3)
+                )
+            summary_dim = (
+                len(self.sampling_motion_kernel_sizes)
+                * self.sampling_motion_hidden_dim * 2
+                + 5
+            )
+            self.sampling_motion_projector = nn.Sequential(
+                nn.Linear(summary_dim, 128),
+                nn.LayerNorm(128),
+                nn.GELU(),
+                nn.Dropout(dropout),
+                nn.Linear(128, 128),
+            )
+            nn.init.normal_(self.sampling_motion_projector[-1].weight, std=1e-3)
+            nn.init.zeros_(self.sampling_motion_projector[-1].bias)
+            self.sampling_motion_quality_gate = nn.Sequential(
+                nn.Linear(5, self.sampling_motion_hidden_dim), nn.GELU(),
+                nn.Linear(self.sampling_motion_hidden_dim, 1),
+            )
+            nn.init.zeros_(self.sampling_motion_quality_gate[-1].weight)
+            gate_ratio = self.sampling_motion_gate_init / self.sampling_motion_gate_max
+            nn.init.constant_(
+                self.sampling_motion_quality_gate[-1].bias,
+                math.log(gate_ratio / (1.0 - gate_ratio))
+            )
+            torch.random.set_rng_state(motion_rng_state)
 
         if self.sparse_trajectory_residual or self.sparse_trajectory_logit_correction:
             # Optional parameters must not change the DataLoader shuffle stream.
@@ -1012,6 +1134,54 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         gate = torch.sigmoid(self.sparse_quality_gate(quality))
         return residual, gate
 
+    def _sampling_aware_motion_summary(self, motion, valid_mask):
+        if motion.size(-1) != 7:
+            raise ValueError(
+                "sampling-aware motion expects seven channels: "
+                "delta_t, distance, speed, acceleration, jerk, "
+                "heading change and heading-change rate"
+            )
+        motion = torch.nan_to_num(motion)
+        masked_motion = motion * valid_mask.unsqueeze(-1).to(motion.dtype)
+        branch_summaries = []
+        temporal = masked_motion.permute(0, 2, 1)
+        for branch, attention in zip(
+                self.sampling_motion_branches,
+                self.sampling_motion_attentions):
+            encoded = attention(branch(temporal), valid_mask)
+            mean, maximum = self._masked_mean_max(
+                encoded.permute(0, 2, 1), valid_mask
+            )
+            branch_summaries.extend([mean, maximum])
+
+        valid = valid_mask.unsqueeze(-1).to(motion.dtype)
+        count = valid.sum(dim=1).clamp_min(1.0)
+        delta_t = motion[..., 0:1]
+        delta_mean = (delta_t * valid).sum(dim=1) / count
+        delta_centered = (delta_t - delta_mean.unsqueeze(1)) * valid
+        delta_dispersion = torch.sqrt(
+            delta_centered.square().sum(dim=1) / count + 1e-6
+        )
+        valid_fraction = count / float(max(motion.size(1), 1))
+        pair_fraction = (
+            (valid_mask[:, 1:] & valid_mask[:, :-1]).sum(dim=1, keepdim=True)
+            .to(motion.dtype) / float(max(motion.size(1) - 1, 1))
+        )
+        nominal_rate = motion.new_full(
+            (motion.size(0), 1),
+            math.log1p(self.sampling_interval_seconds) / math.log1p(60.0)
+        )
+        quality = torch.cat([
+            valid_fraction, pair_fraction, delta_mean.abs(),
+            delta_dispersion, nominal_rate
+        ], dim=1)
+        summary = torch.cat(branch_summaries + [quality], dim=1)
+        residual = self.sampling_motion_projector(summary)
+        gate = self.sampling_motion_gate_max * torch.sigmoid(
+            self.sampling_motion_quality_gate(quality)
+        )
+        return residual, gate
+
     def forward(self, X1, padding_mask1, X2, padding_mask2):
         """
         双分支转换器分类器的前向传播
@@ -1068,9 +1238,19 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             )
             X2 = motion_features * reliability
         
+        sampling_motion_residual = None
+        sampling_motion_gate = None
+        if self.sampling_aware_multiscale_motion:
+            sampling_motion_residual, sampling_motion_gate = (
+                self._sampling_aware_motion_summary(X2, padding_mask2)
+            )
+            feature_branch_input = X2[..., self.sampling_motion_base_indices]
+        else:
+            feature_branch_input = X2
+
         # 获取两个分支的特征表示
         trajectory_output = self.trajectory_branch(X1, padding_mask1)  # (batch_size, seq_len*d_model)
-        feature_output = self.feature_branch(X2, padding_mask2)  # (batch_size, seq_len*d_model)
+        feature_output = self.feature_branch(feature_branch_input, padding_mask2)  # (batch_size, seq_len*d_model)
         
         # 重塑特征为三维张量，用于后续处理
         trajectory_output = trajectory_output.view(
@@ -1113,6 +1293,17 @@ class DualTSTransformerEncoderClassifier(nn.Module):
 
         if sparse_residual is not None and self.sparse_trajectory_residual:
             pooled_features = pooled_features + sparse_gate * sparse_residual
+
+        if sampling_motion_residual is not None:
+            pooled_features = (
+                pooled_features + sampling_motion_gate * sampling_motion_residual
+            )
+            self.last_sampling_motion_gate_mean = (
+                sampling_motion_gate.detach().mean().item()
+            )
+            self.last_sampling_motion_residual_norm = (
+                sampling_motion_residual.detach().norm(dim=1).mean().item()
+            )
 
         if sparse_residual is not None:
             # Expose compact diagnostics without retaining the autograd graph.

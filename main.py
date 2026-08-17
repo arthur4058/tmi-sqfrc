@@ -244,7 +244,7 @@ class TrainingPipeline:
         self._load_model_state()
         
         # 设置损失函数
-        self.loss_module = get_loss_module(self.config)
+        self.loss_module = get_loss_module(self.config).to(self.device)
         
     def _setup_optimizer(self):
         """设置优化器"""

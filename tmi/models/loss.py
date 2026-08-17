@@ -25,7 +25,14 @@ def get_loss_module(config):
         return TrajRLPretrainLoss(reduction='none', disable_mask=disable_mask)
 
     if "classification" in task:
-        return NoFussCrossEntropyLoss(reduction='none')  # outputs loss for each batch sample
+        class_weights = config.get('class_weights')
+        weight = None
+        if class_weights is not None:
+            weight = torch.as_tensor(class_weights, dtype=torch.float32)
+            logger.info(f"Using classification class weights: {weight.tolist()}")
+        return NoFussCrossEntropyLoss(
+            weight=weight, reduction='none'
+        )  # outputs loss for each batch sample
 
     if task == "regression":
         return nn.MSELoss(reduction='none')  # outputs loss for each batch sample
