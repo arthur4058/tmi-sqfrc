@@ -67,22 +67,25 @@ def load_motion_expert(expert_dir, base_config):
     return config, pipeline, model
 
 
-def evaluate(rate):
-    baseline_path = ROOT / (
-        f"experiments/geolife_matched_b0_fixed_{rate}s_seed10086/"
-        "matched_test/configuration.json"
+def evaluate(rate, seed=10086):
+    baseline_dir = ROOT / (
+        f"experiments/geolife_matched_b0_fixed_{rate}s_seed{seed}"
     )
+    baseline_path = baseline_dir / "configuration.json"
     old_dir = (
-        ROOT / "experiments/geolife_60s_b2_feature_seed10086"
-        if rate == 60
-        else ROOT / f"experiments/geolife_feature_expert_{rate}s_seed10086"
+        ROOT / f"experiments/geolife_60s_b2_feature_seed{seed}"
+        if rate == 60 else
+        ROOT / f"experiments/geolife_feature_expert_{rate}s_seed{seed}"
     )
-    motion_dir = ROOT / f"experiments/geolife_motion_expert_{rate}s_seed10086"
-    output_dir = ROOT / f"experiments/geolife_three_expert_{rate}s_seed10086"
+    motion_dir = ROOT / f"experiments/geolife_motion_expert_{rate}s_seed{seed}"
+    output_dir = ROOT / f"experiments/geolife_three_expert_{rate}s_seed{seed}"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     b0_config = json.loads(baseline_path.read_text(encoding="utf-8"))
     b0_config.update({
+        "task": "dual_branch_classification",
+        "test_only": "testset",
+        "load_model": str(baseline_dir / "checkpoints/model_best.pth"),
         "output_dir": str(output_dir),
         "records_file": str(output_dir / "records.xlsx"),
     })
@@ -155,6 +158,7 @@ def evaluate(rate):
     result = {
         "protocol": "geolife-low-rate-three-expert-v2",
         "sampling_interval_seconds": rate,
+        "seed": seed,
         "selection_split": "user-disjoint-validation",
         "test_touched_during_selection": False,
         "temperatures": temperatures,
@@ -180,9 +184,10 @@ def evaluate(rate):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--rate", type=int, choices=(30, 60), required=True)
+    parser.add_argument("--seed", type=int, default=10086)
     args = parser.parse_args()
     os.chdir(ROOT)
-    evaluate(args.rate)
+    evaluate(args.rate, args.seed)
 
 
 if __name__ == "__main__":
