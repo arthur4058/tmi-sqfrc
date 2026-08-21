@@ -26,7 +26,7 @@ def model_factory(config, data):
     task = config['task']
     if task in ['imputation_pretrain', 'denoising_pretrain', 'denoising_imputation_pretrain']:
         feat_dim = data.noise_feature_df.shape[1]
-        max_seq_len = data.max_seq_len
+        max_seq_len = config.get('max_seq_len') or data.max_seq_len
         model = TSTransformerEncoder(feat_dim, max_seq_len, config['d_model'], config['num_heads'],
                                      config['num_layers'], config['dim_feedforward'], dropout=config['dropout'],
                                      pos_encoding=config['pos_encoding'], activation=config['activation'],

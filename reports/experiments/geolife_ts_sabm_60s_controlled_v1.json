@@ -1,0 +1,110 @@
+{
+  "protocol": "geolife-ts-sabm-60s-controlled-v1",
+  "branch": "exp/ts-sabm-60s-controlled-v1",
+  "base_commit": "90f5dcf",
+  "seed": 10086,
+  "sampling_interval_seconds": 60,
+  "test_samples": 4918,
+  "controlled_variable": "trajectory-branch pretraining mask",
+  "shared_conditions": {
+    "classification_data": "geolife_five_rate_fixed_60s",
+    "classifier_task": "dual_branch_classification",
+    "classifier_max_epochs": 200,
+    "classifier_patience": 40,
+    "selection_metric": "validation accuracy",
+    "trajectory_pretraining_max_epochs": 30,
+    "trajectory_pretraining_patience": 10,
+    "feature_branch_pretraining": false,
+    "test_split": "user-disjoint fixed 60-second test split"
+  },
+  "mask_diagnostics": {
+    "fixed_kde": {
+      "train": {
+        "samples": 62786,
+        "mean_mask_ratio": 0.999719151827902,
+        "median_mask_ratio": 1.0,
+        "fully_masked_samples": 62697,
+        "fully_masked_sample_ratio": 0.9985824865415857
+      },
+      "val": {
+        "samples": 7129,
+        "mean_mask_ratio": 0.9995183990274465,
+        "median_mask_ratio": 1.0,
+        "fully_masked_samples": 7113,
+        "fully_masked_sample_ratio": 0.9977556459531491
+      },
+      "test": {
+        "samples": 4918,
+        "mean_mask_ratio": 0.999816998779992,
+        "median_mask_ratio": 1.0,
+        "fully_masked_samples": 4913,
+        "fully_masked_sample_ratio": 0.9989833265555104
+      }
+    },
+    "ts_sabm": {
+      "parameters": {
+        "target_mask_ratio": 0.3,
+        "mask_duration_seconds": 30.0,
+        "kde_bandwidth": 1.0,
+        "kde_kernel": "epa"
+      },
+      "train": {
+        "samples": 62786,
+        "mean_mask_ratio": 0.3708151498741758,
+        "median_mask_ratio": 0.4,
+        "mean_block_length_points": 1.0,
+        "median_effective_dt_seconds": 60.0,
+        "fully_masked_sample_ratio": 0.0
+      },
+      "val": {
+        "samples": 7129,
+        "mean_mask_ratio": 0.36145321924533597,
+        "median_mask_ratio": 0.3333333333333333,
+        "mean_block_length_points": 1.0,
+        "median_effective_dt_seconds": 60.0,
+        "fully_masked_sample_ratio": 0.0
+      },
+      "test": {
+        "samples": 4918,
+        "mean_mask_ratio": 0.37191270164023316,
+        "median_mask_ratio": 0.4,
+        "mean_block_length_points": 1.0,
+        "median_effective_dt_seconds": 60.0,
+        "fully_masked_sample_ratio": 0.0
+      }
+    }
+  },
+  "pretraining": {
+    "fixed_kde": {"best_epoch": 2, "best_validation_loss": 0.001271},
+    "ts_sabm": {"best_epoch": 8, "best_validation_loss": 0.000323},
+    "note": "Loss values are not directly comparable because target masks differ."
+  },
+  "classifier_validation": {
+    "fixed_kde": {"best_epoch": 1, "accuracy": 0.7266096226679759, "macro_f1": 0.6280429380494935},
+    "ts_sabm": {"best_epoch": 33, "accuracy": 0.7361481273670921, "macro_f1": 0.6734728475484557}
+  },
+  "test_results": {
+    "b0_no_pretraining": {"accuracy": 0.7161, "macro_f1": 0.6355},
+    "fixed_kde_pretraining": {
+      "accuracy": 0.7096,
+      "macro_precision": 0.6537,
+      "macro_recall": 0.6740,
+      "macro_f1": 0.6473,
+      "per_class_f1": {"Walk": 0.8517, "Bike": 0.6784, "Bus": 0.5474, "Car": 0.7189, "Train": 0.4401}
+    },
+    "ts_sabm_pretraining": {
+      "accuracy": 0.6901,
+      "macro_precision": 0.6215,
+      "macro_recall": 0.6613,
+      "macro_f1": 0.6318,
+      "per_class_f1": {"Walk": 0.8539, "Bike": 0.7246, "Bus": 0.4858, "Car": 0.6966, "Train": 0.3979}
+    }
+  },
+  "deltas": {
+    "ts_sabm_minus_fixed_kde": {"accuracy": -0.0195, "macro_f1": -0.0155},
+    "ts_sabm_minus_b0": {"accuracy": -0.0260, "macro_f1": -0.0037},
+    "fixed_kde_minus_b0": {"accuracy": -0.0065, "macro_f1": 0.0118}
+  },
+  "verdict": "FAILED",
+  "decision": "Do not promote TS-SABM v1 as the paper module. Retain it as a reproducible negative result and mask-path diagnostic."
+}

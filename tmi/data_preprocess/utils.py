@@ -407,6 +407,125 @@ def generate_mask_for_trj_using_KDE_RPD(trj_seg, mean_mask_length=2, bw=1, kerne
     return mask_vec
 
 
+def generate_mask_for_trj_using_KDE_SABM(
+        trj_seg,
+        delta_times,
+        target_mask_ratio=0.30,
+        mask_duration_seconds=30.0,
+        bw=1.0,
+        kernel='epa',
+        return_metadata=False):
+    """Generate a sampling-aware behavior mask for a trajectory segment.
+
+    The upstream KDE mask applies a fixed four-point block to every mapped
+    density peak.  At low sampling rates that can hide nearly the complete
+    segment.  SABM keeps the density-guided centers, but makes the block length
+    represent physical time and caps the number of distinct masked points.
+
+    Mask convention follows the upstream preprocessing code: ``0`` is masked
+    and ``1`` remains visible.
+    """
+    trj_seg = np.asarray(trj_seg, dtype=float)
+    delta_times = np.asarray(delta_times, dtype=float).reshape(-1)
+    if trj_seg.ndim != 2 or trj_seg.shape[1] != 2:
+        raise ValueError('trj_seg must have shape (n_points, 2)')
+    if len(trj_seg) != len(delta_times):
+        raise ValueError('delta_times must have one value per trajectory point')
+    if not 0.0 < float(target_mask_ratio) < 1.0:
+        raise ValueError('target_mask_ratio must be in (0, 1)')
+    if float(mask_duration_seconds) <= 0.0:
+        raise ValueError('mask_duration_seconds must be positive')
+
+    n_points = len(trj_seg)
+    if n_points == 0:
+        empty = np.ones(0, dtype=float)
+        metadata = {
+            'effective_dt': 0.0,
+            'block_length_points': 0,
+            'target_mask_points': 0,
+            'selected_centers': [],
+            'actual_mask_ratio': 0.0,
+        }
+        return (empty, metadata) if return_metadata else empty
+
+    positive_deltas = delta_times[np.isfinite(delta_times) & (delta_times > 0)]
+    effective_dt = float(np.median(positive_deltas)) if len(positive_deltas) else 1.0
+    block_length = int(np.clip(
+        np.rint(float(mask_duration_seconds) / effective_dt), 1, n_points))
+
+    # Always retain at least one point when the segment contains multiple
+    # observations.  This is the core safety property missing upstream.
+    max_maskable = n_points if n_points == 1 else n_points - 1
+    target_mask_points = int(np.clip(
+        np.rint(float(target_mask_ratio) * n_points), 1, max_maskable))
+    center_budget = max(1, int(math.ceil(target_mask_points / block_length)))
+
+    # Estimate density only at real observations.  This removes the many-to-one
+    # grid-peak mapping in the upstream function by construction.
+    scaler = MinMaxScaler(feature_range=(0, 100))
+    scaled = scaler.fit_transform(trj_seg)
+    kernel_name = {
+        'epa': 'epanechnikov',
+        'gaussian': 'gaussian',
+        'tophat': 'tophat',
+        'linear': 'linear',
+        'cosine': 'cosine',
+    }.get(kernel, kernel)
+    try:
+        estimator = KernelDensity(
+            bandwidth=max(float(bw), np.finfo(float).eps),
+            kernel=kernel_name,
+        ).fit(scaled)
+        density_scores = estimator.score_samples(scaled)
+    except (TypeError, ValueError, np.linalg.LinAlgError):
+        # A deterministic fallback is preferable to changing the number of
+        # masks or failing the entire preprocessing job on a degenerate track.
+        density_scores = np.zeros(n_points, dtype=float)
+
+    ranked_indices = np.argsort(-density_scores, kind='stable').astype(int)
+    selected_centers = []
+    for idx in ranked_indices:
+        if all(abs(int(idx) - center) >= block_length
+               for center in selected_centers):
+            selected_centers.append(int(idx))
+            if len(selected_centers) >= center_budget:
+                break
+    if len(selected_centers) < center_budget:
+        for idx in ranked_indices:
+            idx = int(idx)
+            if idx not in selected_centers:
+                selected_centers.append(idx)
+                if len(selected_centers) >= center_budget:
+                    break
+
+    mask_vec = np.ones(n_points, dtype=float)
+    candidate_points = []
+    for center in selected_centers:
+        start = max(0, center - block_length // 2)
+        end = min(n_points, start + block_length)
+        start = max(0, end - block_length)
+        candidate_points.extend(range(start, end))
+
+    # Preserve density order while deduplicating overlapping physical blocks.
+    unique_candidates = list(dict.fromkeys(candidate_points))
+    if len(unique_candidates) < target_mask_points:
+        unique_candidates.extend(
+            idx for idx in ranked_indices.tolist()
+            if idx not in unique_candidates
+        )
+    masked_indices = unique_candidates[:target_mask_points]
+    mask_vec[masked_indices] = 0.0
+
+    metadata = {
+        'effective_dt': effective_dt,
+        'block_length_points': block_length,
+        'target_mask_points': target_mask_points,
+        'selected_centers': selected_centers,
+        'actual_mask_ratio': float(np.mean(mask_vec == 0)),
+    }
+    return (mask_vec, metadata) if return_metadata else mask_vec
+
+
 def find_peak_repeatedly(data, min_peaks=3 * 4, max_peaks=3 * 9, threshold_rel=0., min_distance=2):
     """
     To avoid the situation that a very high peak occurred lead to the rest peaks cannot be identified,

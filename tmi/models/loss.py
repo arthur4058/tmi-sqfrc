@@ -67,13 +67,16 @@ class MaskedMSELoss(nn.Module):
         logger.info(f"MaskedMSELoss disable_mask: {self.disable_mask}")
 
     def forward(self,
-                y_pred: torch.Tensor, y_true: torch.Tensor, mask: torch.BoolTensor) -> torch.Tensor:
+                y_pred: torch.Tensor, y_true: torch.Tensor, mask: torch.BoolTensor,
+                padding_mask: torch.BoolTensor = None) -> torch.Tensor:
         """Compute the loss between a target value and a prediction.
 
         Args:
             y_pred: Estimated values
             y_true: Target values
             mask: boolean tensor with 0s at places where values should be ignored and 1s where they should be considered
+            padding_mask: accepted for compatibility with ``UnsupervisedRunner``;
+                objective masks already exclude padded positions.
 
         Returns
         -------

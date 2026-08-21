@@ -11,6 +11,7 @@ from logzero import logger
 from utils import check_lat_lng, timestamp_to_hour, calc_initial_compass_bearing, \
     generate_mask_for_feature_using_EP, \
     generate_mask_for_trj_using_KDE_RPD, \
+    generate_mask_for_trj_using_KDE_SABM, \
     generate_random_mask
 from utils import interp_single_seg, interp_trj_seg
 from utils import segment_single_series
@@ -394,11 +395,20 @@ def do_calc_feature(trj_segs, trj_seg_labels, args):
         # generate a mask seg by considering lat and lon SIMULTANEOUSLY
         if args.trj_mask_mode == 'kde':
             trj_seg_mask = generate_mask_for_trj_using_KDE_RPD(cn_trj_seg, args.mean_mask_length, args.kde_bw, args.kde_kernel)
+        elif args.trj_mask_mode == 'sabm':
+            trj_seg_mask = generate_mask_for_trj_using_KDE_SABM(
+                cn_trj_seg,
+                cn_multi_feature_seg[0],
+                target_mask_ratio=args.sabm_target_mask_ratio,
+                mask_duration_seconds=args.sabm_mask_duration_seconds,
+                bw=args.kde_bw,
+                kernel=args.kde_kernel,
+            )
         elif args.trj_mask_mode == 'random':
             trj_seg_mask = generate_random_mask(cn_trj_seg, args.mask_ratio, args.mean_mask_length)
         else:
             logger.warning(f'未知的轨迹掩码模式: {args.trj_mask_mode}，使用KDE模式')
-            trj_seg_mask = generate_mask_for_trj_using_KDE_RPD(cn_trj_seg, args.mean_mask_length, args.kde_bw, args.kde_kernel)
+            raise ValueError(f'未知的轨迹掩码模式: {args.trj_mask_mode}')
         trj_seg_masks.append(trj_seg_mask)
 
         # generate a mask seg by considering lat and lon SEPARATELY
@@ -436,7 +446,11 @@ if __name__ == '__main__':
     parser.add_argument('--mean_mask_length', type=int, default=4, )
     parser.add_argument('--mask_ratio', type=float, default=0.15, help='掩码占总数据的比例，用于随机掩码')
     parser.add_argument('--mask_mode', type=str, default='ep', choices=['ep', 'random'], help='特征掩码模式：ep为极值点检测，random为随机掩码')
-    parser.add_argument('--trj_mask_mode', type=str, default='kde', choices=['kde', 'random'], help='轨迹掩码模式：kde为密度估计，random为随机掩码')
+    parser.add_argument('--trj_mask_mode', type=str, default='kde', choices=['kde', 'sabm', 'random'], help='轨迹掩码模式：kde为原密度掩码，sabm为采样感知密度掩码')
+    parser.add_argument('--sabm_target_mask_ratio', type=float, default=0.30,
+                        help='SABM每条轨迹的目标掩码点比例')
+    parser.add_argument('--sabm_mask_duration_seconds', type=float, default=30.0,
+                        help='SABM单个掩码块代表的物理时长（秒）')
     parser.add_argument('--kde_bw', type=float, default=1, help='bandwidth parameter for FFTKDE')
     parser.add_argument('--kde_kernel', type=str, default='epa', help='kernel type for FFTKDE (e.g., epa, gaussian)')
     parser.add_argument(
