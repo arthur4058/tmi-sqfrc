@@ -1,0 +1,32 @@
+{
+  "protocol": "geolife-class-aware-stacking-v8",
+  "release_label": "low-rate-dual-metric-v9",
+  "sampling_interval_seconds": 60,
+  "seed": 10086,
+  "test_samples": 4918,
+  "selection_split": "user-disjoint-validation",
+  "test_fit_performed": false,
+  "minimum_delta": 0.01,
+  "baseline": {
+    "accuracy": 0.7155347702318016,
+    "macro_f1": 0.6373460933052366
+  },
+  "candidate": {
+    "accuracy": 0.7257015046766978,
+    "macro_f1": 0.6494534368571363
+  },
+  "computed_delta": {
+    "accuracy": 0.010166734444896242,
+    "macro_f1": 0.012107343551899685
+  },
+  "metric_passed": {
+    "accuracy": true,
+    "macro_f1": true
+  },
+  "accepted": true,
+  "checkpoint_sha256": {
+    "baseline": "e02cf4ecfeadb214ae48ea73c617edc423044ae2dd1f70d93705ada269234e13",
+    "four_feature_expert": "279110d6c376935df5f27d488f3bd35cdee51c3903e2fcff41fb56632a5148ad",
+    "motion_expert": "7056230e1e90b8b65d163aa43537fe47e9264471c25338f23a3b08375d8a9b7d"
+  }
+}
