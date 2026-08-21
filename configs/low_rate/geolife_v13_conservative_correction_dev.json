@@ -1,0 +1,16 @@
+{
+  "protocol": "geolife-v13-conservative-correction-dev-v1",
+  "seed": 12013,
+  "selection_split": "Train-A/Dev-A users from original training users",
+  "b0_frozen": true,
+  "v12_frozen_after_recovery_validation": true,
+  "correction_scope": "Bus-Car antisymmetric logits only",
+  "n_low": 5.0,
+  "n_high": 15.0,
+  "hidden_dim": 16,
+  "alpha_candidates": [0.25, 0.5, 0.75, 1.0],
+  "uncertainty_tau_candidates": [0.5, 1.0],
+  "uncertainty_temperature": 0.5,
+  "lambda_anchor": 0.5,
+  "formal_test_loaded": false
+}
