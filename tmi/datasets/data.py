@@ -153,7 +153,8 @@ class FeatureData(object):
         # The reliability module consumes delta_t as an auxiliary quality
         # signal.  It is appended after the motion channels so the model can
         # remove it before passing data to the unchanged feature encoder.
-        if config.get('sampling_quality_reliability', False):
+        if (config.get('sampling_quality_reliability', False)
+                or config.get('sampling_aware_branch_fusion', False)):
             quality_feature = int(config.get('sampling_quality_feature', 0))
             if quality_feature in use_features:
                 use_features.remove(quality_feature)

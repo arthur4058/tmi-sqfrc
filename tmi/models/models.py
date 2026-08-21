@@ -47,7 +47,13 @@ def model_factory(config, data):
             dropout=config['dropout'],
             activation=config['activation'],
             sampling_quality_reliability=config.get('sampling_quality_reliability', False),
-            sampling_quality_hidden_dim=config.get('sampling_quality_hidden_dim', 16)
+            sampling_quality_hidden_dim=config.get('sampling_quality_hidden_dim', 16),
+            sampling_aware_branch_fusion=config.get('sampling_aware_branch_fusion', False),
+            branch_fusion_hidden_dim=config.get('branch_fusion_hidden_dim', 8),
+            branch_fusion_use_activation_stats=config.get('branch_fusion_use_activation_stats', True),
+            branch_fusion_trajectory_strength=config.get('branch_fusion_trajectory_strength', 0.50),
+            branch_fusion_feature_strength=config.get('branch_fusion_feature_strength', 0.15),
+            branch_fusion_freeze_backbone=config.get('branch_fusion_freeze_backbone', False),
         )
         
         # 记录日志
@@ -779,7 +785,11 @@ class DualTSTransformerEncoderClassifier(nn.Module):
     """
     def __init__(self, trajectory_branch_hyperparams, feature_branch_hyperparams, num_classes, dropout=0.1,
                  activation='gelu', sampling_quality_reliability=False,
-                 sampling_quality_hidden_dim=16):
+                 sampling_quality_hidden_dim=16,
+                 sampling_aware_branch_fusion=False, branch_fusion_hidden_dim=8,
+                 branch_fusion_trajectory_strength=0.50, branch_fusion_feature_strength=0.15,
+                 branch_fusion_use_activation_stats=True,
+                 branch_fusion_freeze_backbone=False):
         super(DualTSTransformerEncoderClassifier, self).__init__()
         self.num_classes = num_classes
         
@@ -789,6 +799,14 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         self.trajectory_max_len = trajectory_branch_hyperparams.get('max_len')
         self.feature_max_len = feature_branch_hyperparams.get('max_len')
         self.sampling_quality_reliability = sampling_quality_reliability
+        self.sampling_aware_branch_fusion = sampling_aware_branch_fusion
+        self.branch_fusion_freeze_backbone = branch_fusion_freeze_backbone
+        self.branch_fusion_trajectory_strength = float(branch_fusion_trajectory_strength)
+        self.branch_fusion_feature_strength = float(branch_fusion_feature_strength)
+        self.branch_fusion_use_activation_stats = bool(branch_fusion_use_activation_stats)
+        if self.sampling_quality_reliability and self.sampling_aware_branch_fusion:
+            raise ValueError('input reliability and branch fusion are mutually exclusive')
+
 
         if self.sampling_quality_reliability:
             # Five descriptors: local standardized delta_t, its magnitude,
@@ -843,6 +861,99 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         self.act = _get_activation_fn(activation)
         self.dropout1 = nn.Dropout(dropout)
 
+        if self.sampling_aware_branch_fusion:
+            if not 0.0 <= self.branch_fusion_trajectory_strength <= 1.0:
+                raise ValueError('branch_fusion_trajectory_strength must be in [0, 1]')
+            if not 0.0 <= self.branch_fusion_feature_strength <= 1.0:
+                raise ValueError('branch_fusion_feature_strength must be in [0, 1]')
+            # The optional module must not change B0 initialization or the
+            # random stream later consumed by the DataLoader.
+            rng_state = torch.get_rng_state()
+            self.branch_fusion_gate = nn.Sequential(
+                nn.Linear(10 if self.branch_fusion_use_activation_stats else 5, branch_fusion_hidden_dim),
+                nn.GELU(),
+                nn.Linear(branch_fusion_hidden_dim, 2),
+            )
+            nn.init.zeros_(self.branch_fusion_gate[-1].weight)
+            nn.init.zeros_(self.branch_fusion_gate[-1].bias)
+            torch.set_rng_state(rng_state)
+
+        if self.branch_fusion_freeze_backbone:
+            if not self.sampling_aware_branch_fusion:
+                raise ValueError('frozen branch-fusion backbone requires branch fusion')
+            for parameter in self.parameters():
+                parameter.requires_grad = False
+            for parameter in self.branch_fusion_gate.parameters():
+                parameter.requires_grad = True
+
+    @staticmethod
+    def _masked_activation_stats(values, padding_mask):
+        valid = padding_mask.unsqueeze(-1).to(values.dtype)
+        count = valid.sum(dim=1).clamp_min(1.0)
+        mean = (values * valid).sum(dim=1) / count
+        centered = (values - mean.unsqueeze(1)) * valid
+        variance = centered.square().sum(dim=(1, 2)) / count.squeeze(-1)
+        return mean.abs().mean(dim=1), torch.sqrt(variance + 1e-6)
+
+    def _branch_fusion_quality(self, delta_t, padding_mask,
+                               trajectory_output, feature_output):
+        valid = padding_mask.unsqueeze(-1).to(delta_t.dtype)
+        count = valid.sum(dim=1).clamp_min(1.0)
+        dt_mean = (delta_t * valid).sum(dim=1) / count
+        centered = (delta_t - dt_mean.unsqueeze(1)) * valid
+        dt_std = torch.sqrt(centered.square().sum(dim=1) / count + 1e-6)
+        dt_max = (delta_t.abs() * valid).amax(dim=1)
+        valid_fraction = count / float(delta_t.size(1))
+        if delta_t.size(1) > 1:
+            pair_valid = (padding_mask[:, 1:] & padding_mask[:, :-1]).unsqueeze(-1)
+            pair_count = pair_valid.sum(dim=1).clamp_min(1).to(delta_t.dtype)
+            dt_change = (
+                (delta_t[:, 1:] - delta_t[:, :-1]).abs()
+                * pair_valid.to(delta_t.dtype)
+            ).sum(dim=1) / pair_count
+        else:
+            dt_change = torch.zeros_like(dt_mean)
+        physical_descriptor = torch.cat([
+            dt_mean,
+            dt_std,
+            dt_max,
+            valid_fraction,
+            dt_change,
+        ], dim=1)
+        if not self.branch_fusion_use_activation_stats:
+            return physical_descriptor.clamp(-5.0, 5.0)
+
+        trajectory_level, trajectory_dispersion = self._masked_activation_stats(
+            trajectory_output, padding_mask)
+        feature_level, feature_dispersion = self._masked_activation_stats(
+            feature_output, padding_mask)
+        level_ratio = trajectory_level / feature_level.clamp_min(1e-6)
+        descriptor = torch.cat([
+            physical_descriptor,
+            trajectory_level.unsqueeze(-1),
+            trajectory_dispersion.unsqueeze(-1),
+            feature_level.unsqueeze(-1),
+            feature_dispersion.unsqueeze(-1),
+            level_ratio.unsqueeze(-1),
+        ], dim=1)
+        return descriptor.clamp(-5.0, 5.0)
+
+    def branch_fusion_scales(self, descriptor):
+        raw = torch.tanh(self.branch_fusion_gate(descriptor))
+        trajectory_scale = 1.0 + self.branch_fusion_trajectory_strength * raw[:, 0]
+        feature_scale = 1.0 + self.branch_fusion_feature_strength * raw[:, 1]
+        return torch.stack([trajectory_scale, feature_scale], dim=1)
+
+    def train(self, mode=True):
+        super().train(mode)
+        if self.branch_fusion_freeze_backbone:
+            self.trajectory_branch.eval()
+            self.feature_branch.eval()
+            self.conv_layers.eval()
+            self.classifier.eval()
+            self.branch_fusion_gate.train(mode)
+        return self
+
     def forward(self, X1, padding_mask1, X2, padding_mask2):
         """
         双分支转换器分类器的前向传播
@@ -857,6 +968,18 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             output: 分类结果，形状 (batch_size, num_classes)
         """
         batch_size = X1.size(0)
+        delta_t = None
+
+        if self.sampling_aware_branch_fusion:
+            expected_dim = self.feature_feat_dim + 1
+            if X2.size(-1) != expected_dim:
+                raise ValueError(
+                    'sampling-aware branch fusion expects '
+                    f'{expected_dim} channels (motion + delta_t), got {X2.size(-1)}'
+                )
+            delta_t = X2[..., self.feature_feat_dim:self.feature_feat_dim + 1]
+            X2 = X2[..., :self.feature_feat_dim]
+
 
         if self.sampling_quality_reliability:
             expected_dim = self.feature_feat_dim + 1
@@ -900,6 +1023,17 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             batch_size, X1.size(1), self.trajectory_d_model)
         feature_output = feature_output.view(
             batch_size, X2.size(1), self.feature_d_model)
+
+        if self.sampling_aware_branch_fusion:
+            descriptor = self._branch_fusion_quality(
+                delta_t,
+                padding_mask2,
+                trajectory_output,
+                feature_output,
+            )
+            scales = self.branch_fusion_scales(descriptor)
+            trajectory_output = trajectory_output * scales[:, 0, None, None]
+            feature_output = feature_output * scales[:, 1, None, None]
         
         # 在特征维度上拼接
         combined_output = torch.cat([trajectory_output, feature_output], dim=2)
