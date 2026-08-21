@@ -79,7 +79,8 @@ def setup(args):
     task = config.get('task')
     if task is None:
         raise ValueError("必须通过 --task 或配置文件提供 task")
-    config['key_metric'] = 'accuracy' if 'classification' in task else 'loss'
+    default_metric = 'accuracy' if 'classification' in task else 'loss'
+    config['key_metric'] = config.get('selection_metric', default_metric)
 
     # Create output directory
     initial_timestamp = datetime.now()
@@ -401,6 +402,12 @@ class SupervisedRunner(BaseRunner):
                         'paired_consistency_weight', 0.2)),
                     ramp_epochs=int(self.exp_config.get(
                         'paired_consistency_ramp_epochs', 10)),
+                    class_weights=self.exp_config.get(
+                        'paired_class_weights'),
+                    confidence_threshold=float(self.exp_config.get(
+                        'paired_consistency_confidence_threshold', 0.0)),
+                    consistency_temperature=float(self.exp_config.get(
+                        'paired_consistency_temperature', 1.0)),
                 )
                 mean_loss = terms.total
                 batch_loss = mean_loss.detach() * len(targets)

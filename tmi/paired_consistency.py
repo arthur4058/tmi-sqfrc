@@ -114,6 +114,22 @@ def collate_paired_multirate(batch):
     ]
 
 
+def effective_number_class_weights(labels, num_classes, beta=0.9999):
+    """Return mean-one class weights computed only from training labels."""
+    labels = np.asarray(labels, dtype=np.int64).reshape(-1)
+    if not 0.0 <= beta < 1.0:
+        raise ValueError("beta must be in [0, 1)")
+    counts = np.bincount(labels, minlength=num_classes).astype(np.float64)
+    if len(counts) != num_classes or np.any(counts <= 0):
+        raise ValueError("Every class must occur in the paired training split")
+    if beta == 0.0:
+        weights = np.ones(num_classes, dtype=np.float64)
+    else:
+        weights = (1.0 - beta) / (1.0 - np.power(beta, counts))
+        weights /= weights.mean()
+    return weights.astype(np.float32)
+
+
 @dataclass
 class PairedConsistencyTerms:
     total: Tensor
@@ -126,26 +142,59 @@ class PairedConsistencyTerms:
 def paired_consistency_terms(
         sparse_logits, dense_logits, targets, loss_module, epoch,
         sparse_supervised_weight=0.7, consistency_weight=0.2,
-        ramp_epochs=10):
-    """Combine two supervised views with symmetric Jensen-Shannon consistency."""
+        ramp_epochs=10, class_weights=None,
+        confidence_threshold=0.0, consistency_temperature=1.0):
+    """Combine class-balanced supervision with confidence-gated consistency."""
     if not 0.0 <= sparse_supervised_weight <= 1.0:
         raise ValueError("sparse_supervised_weight must be in [0, 1]")
     if consistency_weight < 0.0:
         raise ValueError("consistency_weight must be non-negative")
     if ramp_epochs < 0:
         raise ValueError("ramp_epochs must be non-negative")
+    if not 0.0 <= confidence_threshold < 1.0:
+        raise ValueError("confidence_threshold must be in [0, 1)")
+    if consistency_temperature <= 0.0:
+        raise ValueError("consistency_temperature must be positive")
 
-    sparse_supervised = loss_module(sparse_logits, targets).mean()
-    dense_supervised = loss_module(dense_logits, targets).mean()
-    sparse_probability = torch.softmax(sparse_logits, dim=-1)
-    dense_probability = torch.softmax(dense_logits, dim=-1)
+    sparse_losses = loss_module(sparse_logits, targets)
+    dense_losses = loss_module(dense_logits, targets)
+    if class_weights is None:
+        sample_weights = torch.ones_like(sparse_losses)
+    else:
+        class_weights = torch.as_tensor(
+            class_weights, dtype=sparse_losses.dtype,
+            device=sparse_losses.device,
+        )
+        if class_weights.ndim != 1 or len(class_weights) != sparse_logits.shape[-1]:
+            raise ValueError("class_weights must contain one value per class")
+        if not torch.isfinite(class_weights).all() or (class_weights <= 0).any():
+            raise ValueError("class_weights must be finite and positive")
+        sample_weights = class_weights[targets.reshape(-1).long()]
+    normalizer = sample_weights.sum().clamp_min(1e-8)
+    sparse_supervised = (sparse_losses * sample_weights).sum() / normalizer
+    dense_supervised = (dense_losses * sample_weights).sum() / normalizer
+
+    temperature = float(consistency_temperature)
+    sparse_probability = torch.softmax(sparse_logits / temperature, dim=-1)
+    dense_probability = torch.softmax(dense_logits / temperature, dim=-1)
     mixture = 0.5 * (sparse_probability + dense_probability)
-    consistency = 0.5 * (
-        F.kl_div(torch.log(mixture.clamp_min(1e-8)), sparse_probability,
-                 reduction="batchmean")
-        + F.kl_div(torch.log(mixture.clamp_min(1e-8)), dense_probability,
-                   reduction="batchmean")
-    )
+    log_mixture = torch.log(mixture.clamp_min(1e-8))
+    per_sample_consistency = 0.5 * (
+        F.kl_div(log_mixture, sparse_probability, reduction="none").sum(dim=-1)
+        + F.kl_div(log_mixture, dense_probability, reduction="none").sum(dim=-1)
+    ) * (temperature ** 2)
+    dense_confidence = dense_probability.detach().amax(dim=-1)
+    confidence_gate = (
+        (dense_confidence - confidence_threshold)
+        / (1.0 - confidence_threshold)
+    ).clamp(0.0, 1.0)
+    gate_total = confidence_gate.sum()
+    if gate_total.item() > 0.0:
+        consistency = (
+            per_sample_consistency * confidence_gate
+        ).sum() / gate_total
+    else:
+        consistency = per_sample_consistency.sum() * 0.0
     ramp = 1.0 if ramp_epochs == 0 else min(1.0, max(0.0, float(epoch) / ramp_epochs))
     supervised = (
         sparse_supervised_weight * sparse_supervised
