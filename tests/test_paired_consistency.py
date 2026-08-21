@@ -4,6 +4,7 @@ import torch
 
 from tmi.paired_consistency import (
     collate_paired_multirate,
+    effective_number_class_weights,
     paired_consistency_terms,
 )
 
@@ -63,6 +64,37 @@ class PairedConsistencyTest(unittest.TestCase):
         self.assertEqual(sm1.shape[1], 4)
         self.assertEqual(dm1.shape[1], 7)
         self.assertEqual(targets.shape, (2, 1))
+
+    def test_effective_number_weights_upweight_minority(self):
+        weights = effective_number_class_weights(
+            [0] * 100 + [1] * 20, num_classes=2, beta=0.9999)
+        self.assertAlmostEqual(float(weights.mean()), 1.0, places=6)
+        self.assertGreater(weights[1], weights[0])
+
+    def test_class_weights_change_supervised_loss(self):
+        logits = torch.tensor([[3.0, 0.0], [3.0, 0.0]], requires_grad=True)
+        targets = torch.tensor([[0], [1]])
+        plain = paired_consistency_terms(
+            logits, logits, targets, self.loss_module, epoch=1,
+            consistency_weight=0.0)
+        balanced = paired_consistency_terms(
+            logits, logits, targets, self.loss_module, epoch=1,
+            consistency_weight=0.0, class_weights=[0.5, 1.5])
+        self.assertGreater(
+            balanced.sparse_supervised.item(),
+            plain.sparse_supervised.item(),
+        )
+
+    def test_confidence_threshold_can_disable_consistency(self):
+        sparse = torch.tensor([[0.1, 0.0], [0.0, 0.1]], requires_grad=True)
+        dense = torch.tensor([[0.0, 0.1], [0.1, 0.0]], requires_grad=True)
+        targets = torch.tensor([[0], [1]])
+        terms = paired_consistency_terms(
+            sparse, dense, targets, self.loss_module, epoch=10,
+            confidence_threshold=0.9)
+        self.assertEqual(terms.consistency.item(), 0.0)
+        terms.total.backward()
+        self.assertTrue(torch.isfinite(sparse.grad).all())
 
     def test_invalid_weights_are_rejected(self):
         logits = torch.zeros(2, 2)

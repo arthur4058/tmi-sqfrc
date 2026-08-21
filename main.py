@@ -33,6 +33,7 @@ from tmi.models.models import model_factory
 from tmi.paired_consistency import (
     PairedMultiRateDataset,
     collate_paired_multirate,
+    effective_number_class_weights,
 )
 from tmi.optimizers import get_optimizer
 from tmi.options import Options
@@ -411,6 +412,21 @@ class TrainingPipeline:
         # 训练集数据加载器
         if self.paired_dense_data is not None:
             from tmi.datasets.dataset import parse_input_type
+            if self.config.get('paired_class_balance', False):
+                training_labels = self.train_data.labels_df.loc[
+                    self.train_indices
+                ].values.reshape(-1)
+                class_weights = effective_number_class_weights(
+                    training_labels,
+                    num_classes=len(self.config['class_names']),
+                    beta=float(self.config.get(
+                        'paired_class_balance_beta', 0.9999)),
+                )
+                self.config['paired_class_weights'] = class_weights.tolist()
+                logger.info(
+                    "V6.1 training-only class weights: %s",
+                    self.config['paired_class_weights'],
+                )
             train_dataset = PairedMultiRateDataset(
                 self.train_data,
                 self.paired_dense_data,
