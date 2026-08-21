@@ -1,0 +1,27 @@
+{
+  "protocol": "geolife-v6.1-balanced-paired-v2",
+  "sampling_interval_seconds": 60,
+  "seed": 10086,
+  "selection_split": "user-disjoint-validation",
+  "validation": {
+    "v2": {"accuracy": 0.7473698976013466, "macro_f1": 0.6718538036048254},
+    "v6_1": {"accuracy": 0.7221209145742741, "macro_f1": 0.6477361418083236},
+    "fusion": {"accuracy": 0.751578061439192, "macro_f1": 0.6824997265163759},
+    "fusion_delta_vs_v2": {"accuracy": 0.004208163837845391, "macro_f1": 0.010645922911550532}
+  },
+  "frozen_parameters": {
+    "v2_temperatures": [0.95, 1.1, 1.225],
+    "v2_weights": [0.24, 0.14, 0.62],
+    "v6_1_temperature": 1.2000000000000002,
+    "v6_1_residual_weight": 0.37
+  },
+  "formal_test": {
+    "samples": 4918,
+    "parameters_frozen_on_validation": true,
+    "v2": {"accuracy": 0.7248881659211062, "macro_f1": 0.6600421292791709},
+    "v6_1": {"accuracy": 0.6722244814965433, "macro_f1": 0.5924843270796171},
+    "fusion": {"accuracy": 0.7269215128100854, "macro_f1": 0.6599066812275918},
+    "fusion_delta_vs_v2": {"accuracy": 0.0020333468889792705, "macro_f1": -0.00013544805157916784}
+  },
+  "decision": "retain_v2_as_best"
+}
