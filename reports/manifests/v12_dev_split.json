@@ -1,0 +1,82 @@
+{
+  "protocol": "geolife-v12-user-disjoint-dev-v1",
+  "seed": 12013,
+  "source_split": "existing five-rate training users only",
+  "formal_validation_or_test_loaded": false,
+  "train_a": {
+    "users": [
+      10,
+      21,
+      53,
+      56,
+      60,
+      62,
+      64,
+      67,
+      68,
+      69,
+      73,
+      75,
+      76,
+      80,
+      82,
+      84,
+      85,
+      87,
+      96,
+      97,
+      101,
+      104,
+      110,
+      111,
+      112,
+      114,
+      128,
+      129,
+      136,
+      138,
+      139,
+      153,
+      154,
+      167,
+      174
+    ],
+    "user_count": 35,
+    "window_count": 47307,
+    "class_counts": {
+      "3": 9599,
+      "0": 10524,
+      "1": 6833,
+      "4": 7770,
+      "2": 12581
+    }
+  },
+  "dev_a": {
+    "users": [
+      58,
+      81,
+      86,
+      91,
+      106,
+      117,
+      125,
+      144,
+      161
+    ],
+    "user_count": 9,
+    "window_count": 1786,
+    "class_counts": {
+      "2": 530,
+      "0": 526,
+      "4": 123,
+      "1": 263,
+      "3": 344
+    }
+  },
+  "checks": {
+    "train_dev_user_disjoint": true,
+    "all_five_classes_in_train_a": true,
+    "all_five_classes_in_dev_a": true,
+    "source_users_are_original_training_users": true
+  }
+}
