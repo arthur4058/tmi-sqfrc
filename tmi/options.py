@@ -154,6 +154,10 @@ class Options(object):
                                  help='Exclude trajectory Transformer states from sparse correction')
         self.parser.add_argument('--sparse_trajectory_hidden_dim', type=int, default=32)
         self.parser.add_argument('--sparse_trajectory_gate_init', type=float, default=0.1)
+        self.parser.add_argument('--kinematic_summary_residual', action='store_true',
+                                 help='Add a masked whole-window kinematic statistics residual')
+        self.parser.add_argument('--kinematic_summary_hidden_dim', type=int, default=32)
+        self.parser.add_argument('--kinematic_summary_scale', type=float, default=0.5)
 
     def parse(self):
 

@@ -1,0 +1,46 @@
+{
+  "protocol": "geolife-sparse-kinematic-summary-v11",
+  "sampling_interval_seconds": 60,
+  "seed": 10086,
+  "samples": {
+    "train": 62786,
+    "validation": 7129,
+    "test": 4918
+  },
+  "module": {
+    "summary_features": [
+      "mean", "standard_deviation", "minimum", "maximum",
+      "range", "first_to_last_trend", "valid_fraction", "pair_fraction"
+    ],
+    "kinematic_channels": [
+      "velocity", "acceleration", "jerk", "heading_change_rate"
+    ],
+    "trainable_parameters": 1081,
+    "base_model_frozen": true,
+    "correction_scale": 0.5
+  },
+  "checkpoint": {
+    "epoch": 2,
+    "sha256": "b089941426d02d8f6909c0500a061142c05f97ee4627e71feba6424c72fe5079"
+  },
+  "validation": {
+    "baseline": {"accuracy": 0.724646, "macro_f1": 0.633814},
+    "v11": {"accuracy": 0.7362883994950203, "macro_f1": 0.6562853332056033}
+  },
+  "test": {
+    "baseline": {"accuracy": 0.7161, "macro_f1": 0.6355},
+    "v11": {"accuracy": 0.7062, "macro_f1": 0.6390},
+    "delta_percentage_points": {"accuracy": -0.99, "macro_f1": 0.35}
+  },
+  "per_class_test_f1": {
+    "Walk": 0.8469,
+    "Bike": 0.6905,
+    "Bus": 0.5485,
+    "Car": 0.7193,
+    "Train": 0.3896
+  },
+  "decision": {
+    "adopt_v11": false,
+    "reason": "Validation gains did not transfer to test users; Car-to-Bus confusion reduced accuracy by 0.99 percentage points."
+  }
+}

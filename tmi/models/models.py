@@ -61,7 +61,10 @@ def model_factory(config, data):
             ),
             sparse_physical_only=config.get('sparse_physical_only', False),
             sparse_trajectory_hidden_dim=config.get('sparse_trajectory_hidden_dim', 32),
-            sparse_trajectory_gate_init=config.get('sparse_trajectory_gate_init', 0.1)
+            sparse_trajectory_gate_init=config.get('sparse_trajectory_gate_init', 0.1),
+            kinematic_summary_residual=config.get('kinematic_summary_residual', False),
+            kinematic_summary_hidden_dim=config.get('kinematic_summary_hidden_dim', 32),
+            kinematic_summary_scale=config.get('kinematic_summary_scale', 0.5)
         )
         
         # 记录日志
@@ -799,7 +802,10 @@ class DualTSTransformerEncoderClassifier(nn.Module):
                  sparse_trajectory_logit_correction=False,
                  freeze_base_model_for_sparse=False,
                  sparse_trajectory_correction_scale=1.0,
-                 sparse_physical_only=False):
+                 sparse_physical_only=False,
+                 kinematic_summary_residual=False,
+                 kinematic_summary_hidden_dim=32,
+                 kinematic_summary_scale=0.5):
         super(DualTSTransformerEncoderClassifier, self).__init__()
         self.num_classes = num_classes
         
@@ -817,6 +823,8 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             sparse_trajectory_correction_scale
         )
         self.sparse_physical_only = sparse_physical_only
+        self.kinematic_summary_residual = kinematic_summary_residual
+        self.kinematic_summary_scale = float(kinematic_summary_scale)
         if not 0.0 <= self.sparse_trajectory_correction_scale <= 1.0:
             raise ValueError(
                 "sparse_trajectory_correction_scale must be in [0, 1]"
@@ -826,6 +834,13 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             raise ValueError(
                 "choose either pooled residual or logit correction, not both"
             )
+        if self.kinematic_summary_residual and (
+                sparse_trajectory_residual or sparse_trajectory_logit_correction):
+            raise ValueError(
+                "kinematic summary cannot be combined with legacy sparse modes"
+            )
+        if not 0.0 <= self.kinematic_summary_scale <= 1.0:
+            raise ValueError("kinematic_summary_scale must be in [0, 1]")
 
         if self.sampling_quality_reliability:
             # Five descriptors: local standardized delta_t, its magnitude,
@@ -918,14 +933,33 @@ class DualTSTransformerEncoderClassifier(nn.Module):
                 math.log(sparse_trajectory_gate_init / (1.0 - sparse_trajectory_gate_init))
             )
             torch.random.set_rng_state(sparse_rng_state)
+
+        if self.kinematic_summary_residual:
+            # Six robust statistics for every kinematic channel, plus point
+            # and adjacent-pair density. Preserve the global RNG so enabling
+            # this optional module does not change B0 DataLoader shuffling.
+            summary_rng_state = torch.random.get_rng_state()
+            summary_dim = 6 * self.feature_feat_dim + 2
+            self.kinematic_summary_head = nn.Sequential(
+                nn.LayerNorm(summary_dim),
+                nn.Linear(summary_dim, kinematic_summary_hidden_dim),
+                nn.GELU(),
+                nn.Dropout(dropout),
+                nn.Linear(kinematic_summary_hidden_dim, num_classes),
+            )
+            nn.init.zeros_(self.kinematic_summary_head[-1].weight)
+            nn.init.zeros_(self.kinematic_summary_head[-1].bias)
+            torch.random.set_rng_state(summary_rng_state)
         
         self.act = _get_activation_fn(activation)
         self.dropout1 = nn.Dropout(dropout)
 
         if self.freeze_base_model_for_sparse:
-            if not self.sparse_trajectory_logit_correction:
+            if not (
+                    self.sparse_trajectory_logit_correction
+                    or self.kinematic_summary_residual):
                 raise ValueError(
-                    "freeze_base_model_for_sparse requires logit correction"
+                    "freeze_base_model_for_sparse requires a correction module"
                 )
             for module in self._base_modules():
                 for parameter in module.parameters():
@@ -1012,6 +1046,49 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         gate = torch.sigmoid(self.sparse_quality_gate(quality))
         return residual, gate
 
+    def _kinematic_window_summary(self, features, valid_mask):
+        """Summarize a sparse window without using padded observations."""
+        valid = valid_mask.unsqueeze(-1)
+        valid_float = valid.to(features.dtype)
+        count = valid_float.sum(dim=1).clamp_min(1.0)
+        mean = (features * valid_float).sum(dim=1) / count
+        variance = (
+            (features - mean.unsqueeze(1)).square() * valid_float
+        ).sum(dim=1) / count
+        std = torch.sqrt(variance + 1e-6)
+
+        largest = torch.finfo(features.dtype).max
+        minimum = features.masked_fill(~valid, largest).amin(dim=1)
+        maximum = features.masked_fill(~valid, -largest).amax(dim=1)
+        has_valid = valid_mask.any(dim=1, keepdim=True)
+        minimum = torch.where(has_valid, minimum, torch.zeros_like(minimum))
+        maximum = torch.where(has_valid, maximum, torch.zeros_like(maximum))
+
+        first_index = valid_mask.to(torch.int64).argmax(dim=1)
+        reverse_index = valid_mask.flip(1).to(torch.int64).argmax(dim=1)
+        last_index = valid_mask.size(1) - 1 - reverse_index
+        first = features.gather(
+            1, first_index[:, None, None].expand(-1, 1, features.size(2))
+        ).squeeze(1)
+        last = features.gather(
+            1, last_index[:, None, None].expand(-1, 1, features.size(2))
+        ).squeeze(1)
+        trend = torch.where(has_valid, last - first, torch.zeros_like(first))
+        value_range = maximum - minimum
+
+        valid_fraction = valid_float.mean(dim=1)
+        if valid_mask.size(1) > 1:
+            pair_fraction = (
+                valid_mask[:, 1:] & valid_mask[:, :-1]
+            ).to(features.dtype).mean(dim=1, keepdim=True)
+        else:
+            pair_fraction = features.new_zeros((features.size(0), 1))
+        summary = torch.cat([
+            mean, std, minimum, maximum, value_range, trend,
+            valid_fraction[:, :1], pair_fraction,
+        ], dim=1)
+        return summary
+
     def forward(self, X1, padding_mask1, X2, padding_mask2):
         """
         双分支转换器分类器的前向传播
@@ -1026,6 +1103,10 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             output: 分类结果，形状 (batch_size, num_classes)
         """
         batch_size = X1.size(0)
+        kinematic_correction = None
+        if self.kinematic_summary_residual:
+            summary = self._kinematic_window_summary(X2, padding_mask2)
+            kinematic_correction = self.kinematic_summary_head(summary)
 
         if self.masked_fusion_pooling and (
             padding_mask1.shape != padding_mask2.shape
@@ -1128,6 +1209,13 @@ class DualTSTransformerEncoderClassifier(nn.Module):
                 self.sparse_trajectory_correction_scale
                 * sparse_gate
                 * sparse_residual
+            )
+        if kinematic_correction is not None:
+            output = output + self.kinematic_summary_scale * torch.tanh(
+                kinematic_correction
+            )
+            self.last_kinematic_correction_norm = (
+                kinematic_correction.detach().norm(dim=1).mean().item()
             )
         
         return output
