@@ -1,0 +1,19 @@
+{
+  "protocol": "geolife-v12-behavior-recovery-dev-v1",
+  "seed": 12013,
+  "source_split": "existing five-rate training users only",
+  "train_users": "Train-A",
+  "development_users": "Dev-A",
+  "sparse_rate_seconds": 60,
+  "privileged_dense_rate_seconds": 5,
+  "hidden_dim": 32,
+  "dropout": 0.1,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "batch_size": 2048,
+  "epochs": 50,
+  "early_stopping_patience": 8,
+  "loss": "SmoothL1 on train-normalized transformed behavior targets",
+  "model_input_uses_dense_view": false,
+  "formal_test_loaded": false
+}
