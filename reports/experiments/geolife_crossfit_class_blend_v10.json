@@ -1,0 +1,61 @@
+{
+  "protocol": "geolife-crossfit-class-blend-v10",
+  "sampling_interval_seconds": 60,
+  "seed": 10086,
+  "selection_split": "user-disjoint-validation",
+  "test_fit_performed": false,
+  "samples": {
+    "train": 62786,
+    "validation": 7129,
+    "test": 4918
+  },
+  "validation": {
+    "v2": {
+      "accuracy": 0.7473698976013466,
+      "macro_f1": 0.6718538036048254
+    },
+    "crossfit_stacker": {
+      "accuracy": 0.7668677233833637,
+      "macro_f1": 0.6991677401779227
+    },
+    "v10_nested_oof": {
+      "accuracy": 0.7640622808248001,
+      "macro_f1": 0.695758721348918
+    }
+  },
+  "selected_class_alphas": {
+    "Walk": 0.0,
+    "Bike": 1.0,
+    "Bus": 1.0,
+    "Car": 1.0,
+    "Train": 1.0
+  },
+  "test": {
+    "baseline": {
+      "accuracy": 0.7155347702318016,
+      "macro_f1": 0.6373460933052366
+    },
+    "v2": {
+      "accuracy": 0.7248881659211062,
+      "macro_f1": 0.6600421292791709
+    },
+    "v9": {
+      "accuracy": 0.7257015046766978,
+      "macro_f1": 0.6494534368571363
+    },
+    "crossfit_stacker": {
+      "accuracy": 0.725294835298902,
+      "macro_f1": 0.6491363551411597
+    },
+    "v10": {
+      "accuracy": 0.7244814965433103,
+      "macro_f1": 0.6487674312089707
+    }
+  },
+  "decision": {
+    "adopt_v10": false,
+    "accuracy_leader": "v9",
+    "macro_f1_leader": "v2",
+    "reason": "V10 does not exceed either incumbent metric leader on the independent test split."
+  }
+}
