@@ -61,7 +61,16 @@ def model_factory(config, data):
             ),
             sparse_physical_only=config.get('sparse_physical_only', False),
             sparse_trajectory_hidden_dim=config.get('sparse_trajectory_hidden_dim', 32),
-            sparse_trajectory_gate_init=config.get('sparse_trajectory_gate_init', 0.1)
+            sparse_trajectory_gate_init=config.get('sparse_trajectory_gate_init', 0.1),
+            low_rate_representation_recovery=config.get(
+                'low_rate_representation_recovery', False
+            ),
+            representation_recovery_hidden_dim=config.get(
+                'representation_recovery_hidden_dim', 128
+            ),
+            representation_recovery_gate_init=config.get(
+                'representation_recovery_gate_init', 0.2
+            )
         )
         
         # 记录日志
@@ -799,7 +808,10 @@ class DualTSTransformerEncoderClassifier(nn.Module):
                  sparse_trajectory_logit_correction=False,
                  freeze_base_model_for_sparse=False,
                  sparse_trajectory_correction_scale=1.0,
-                 sparse_physical_only=False):
+                 sparse_physical_only=False,
+                 low_rate_representation_recovery=False,
+                 representation_recovery_hidden_dim=128,
+                 representation_recovery_gate_init=0.2):
         super(DualTSTransformerEncoderClassifier, self).__init__()
         self.num_classes = num_classes
         
@@ -817,6 +829,9 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             sparse_trajectory_correction_scale
         )
         self.sparse_physical_only = sparse_physical_only
+        self.low_rate_representation_recovery = (
+            low_rate_representation_recovery
+        )
         if not 0.0 <= self.sparse_trajectory_correction_scale <= 1.0:
             raise ValueError(
                 "sparse_trajectory_correction_scale must be in [0, 1]"
@@ -918,6 +933,30 @@ class DualTSTransformerEncoderClassifier(nn.Module):
                 math.log(sparse_trajectory_gate_init / (1.0 - sparse_trajectory_gate_init))
             )
             torch.random.set_rng_state(sparse_rng_state)
+
+        if self.low_rate_representation_recovery:
+            if not 0.0 < representation_recovery_gate_init < 1.0:
+                raise ValueError(
+                    "representation_recovery_gate_init must be in (0, 1)"
+                )
+            recovery_rng_state = torch.random.get_rng_state()
+            self.representation_recovery_adapter = nn.Sequential(
+                nn.LayerNorm(fc_input_dim),
+                nn.Linear(fc_input_dim, representation_recovery_hidden_dim),
+                nn.GELU(),
+                nn.Dropout(dropout),
+                nn.Linear(representation_recovery_hidden_dim, fc_input_dim),
+            )
+            nn.init.zeros_(self.representation_recovery_adapter[-1].weight)
+            nn.init.zeros_(self.representation_recovery_adapter[-1].bias)
+            self.representation_recovery_gate_logit = nn.Parameter(torch.tensor(
+                math.log(
+                    representation_recovery_gate_init
+                    / (1.0 - representation_recovery_gate_init)
+                ),
+                dtype=torch.float32,
+            ))
+            torch.random.set_rng_state(recovery_rng_state)
         
         self.act = _get_activation_fn(activation)
         self.dropout1 = nn.Dropout(dropout)
@@ -1012,7 +1051,8 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         gate = torch.sigmoid(self.sparse_quality_gate(quality))
         return residual, gate
 
-    def forward(self, X1, padding_mask1, X2, padding_mask2):
+    def forward(self, X1, padding_mask1, X2, padding_mask2,
+                return_representation=False, apply_representation_recovery=True):
         """
         双分支转换器分类器的前向传播
         
@@ -1114,6 +1154,20 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         if sparse_residual is not None and self.sparse_trajectory_residual:
             pooled_features = pooled_features + sparse_gate * sparse_residual
 
+        base_representation = pooled_features
+        if (
+                self.low_rate_representation_recovery
+                and apply_representation_recovery
+        ):
+            recovery_residual = self.representation_recovery_adapter(
+                base_representation
+            )
+            recovery_gate = torch.sigmoid(
+                self.representation_recovery_gate_logit
+            )
+            pooled_features = base_representation + recovery_gate * recovery_residual
+            self.last_representation_recovery_gate = recovery_gate.detach().item()
+
         if sparse_residual is not None:
             # Expose compact diagnostics without retaining the autograd graph.
             self.last_sparse_gate_mean = sparse_gate.detach().mean().item()
@@ -1130,6 +1184,9 @@ class DualTSTransformerEncoderClassifier(nn.Module):
                 * sparse_residual
             )
         
+        if return_representation:
+            return output, pooled_features, base_representation
+
         return output
 
 

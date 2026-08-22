@@ -22,7 +22,10 @@ from tmi.datasets.dataset import DenoisingDataset, collate_denoising_unsuperv, c
     GenericClassificationDataset, DenoisingImputationDataset
 from tmi.models.loss import l2_reg_loss, mask_length_regularization_loss
 from tmi.models.models import DualTSTransformerEncoderClassifier
-from tmi.paired_consistency import paired_consistency_terms
+from tmi.paired_consistency import (
+    paired_consistency_terms,
+    representation_recovery_loss,
+)
 from tmi.utils import utils, analysis
 
 NEG_METRICS = {'loss'}  # metrics for which "better" is less
@@ -376,20 +379,40 @@ class SupervisedRunner(BaseRunner):
                 (sparse_x1, sparse_x2, sparse_mask1, sparse_mask2,
                  dense_x1, dense_x2, dense_mask1, dense_mask2,
                  targets, IDs) = batch
+                use_recovery = (
+                    self.exp_config.get(
+                        'low_rate_representation_recovery', False
+                    )
+                    and float(self.exp_config.get(
+                        'representation_recovery_weight', 0.0
+                    )) > 0.0
+                )
                 # Keep each rate at its natural batch length: downstream
                 # convolution/pooling is not padding-mask aware. Alternate the
                 # order so BatchNorm running statistics are not always updated
                 # by the same rate last.
                 if i % 2 == 0:
-                    sparse_predictions = self.model(
-                        sparse_x1, sparse_mask1, sparse_x2, sparse_mask2)
-                    dense_predictions = self.model(
-                        dense_x1, dense_mask1, dense_x2, dense_mask2)
+                    sparse_result = self.model(
+                        sparse_x1, sparse_mask1, sparse_x2, sparse_mask2,
+                        return_representation=use_recovery)
+                    dense_result = self.model(
+                        dense_x1, dense_mask1, dense_x2, dense_mask2,
+                        return_representation=use_recovery,
+                        apply_representation_recovery=False)
                 else:
-                    dense_predictions = self.model(
-                        dense_x1, dense_mask1, dense_x2, dense_mask2)
-                    sparse_predictions = self.model(
-                        sparse_x1, sparse_mask1, sparse_x2, sparse_mask2)
+                    dense_result = self.model(
+                        dense_x1, dense_mask1, dense_x2, dense_mask2,
+                        return_representation=use_recovery,
+                        apply_representation_recovery=False)
+                    sparse_result = self.model(
+                        sparse_x1, sparse_mask1, sparse_x2, sparse_mask2,
+                        return_representation=use_recovery)
+                if use_recovery:
+                    sparse_predictions, sparse_representation, _ = sparse_result
+                    dense_predictions, dense_representation, _ = dense_result
+                else:
+                    sparse_predictions = sparse_result
+                    dense_predictions = dense_result
                 terms = paired_consistency_terms(
                     sparse_predictions,
                     dense_predictions,
@@ -410,6 +433,25 @@ class SupervisedRunner(BaseRunner):
                         'paired_consistency_temperature', 1.0)),
                 )
                 mean_loss = terms.total
+                if use_recovery:
+                    recovery_loss, recovery_coverage = (
+                        representation_recovery_loss(
+                            sparse_representation,
+                            dense_representation,
+                            dense_predictions,
+                            confidence_threshold=float(self.exp_config.get(
+                                'representation_recovery_confidence_threshold',
+                                0.5)),
+                            temperature=float(self.exp_config.get(
+                                'representation_recovery_temperature', 1.0)),
+                        )
+                    )
+                    recovery_weight = float(self.exp_config.get(
+                        'representation_recovery_weight', 0.2
+                    ))
+                    mean_loss = mean_loss + (
+                        recovery_weight * terms.ramp * recovery_loss
+                    )
                 batch_loss = mean_loss.detach() * len(targets)
                 metrics = {
                     'loss': mean_loss.item(),
@@ -418,6 +460,12 @@ class SupervisedRunner(BaseRunner):
                     'paired_consistency_loss': terms.consistency.item(),
                     'consistency_ramp': terms.ramp,
                 }
+                if use_recovery:
+                    metrics.update({
+                        'representation_recovery_loss': recovery_loss.item(),
+                        'representation_recovery_coverage': recovery_coverage.item(),
+                        'representation_recovery_gate': self.model.last_representation_recovery_gate,
+                    })
             elif self.is_dual_branch:
                 X1, X2, padding_masks1, padding_masks2, targets, IDs = batch  # 0s: ignore
                 # classification: (batch_size, num_classes) of logits

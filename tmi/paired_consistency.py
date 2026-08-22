@@ -208,3 +208,38 @@ def paired_consistency_terms(
         consistency=consistency,
         ramp=ramp,
     )
+
+
+def representation_recovery_loss(
+        sparse_representation, dense_representation, dense_logits,
+        confidence_threshold=0.5, temperature=1.0):
+    """Align recovered sparse features to a detached, confident dense view."""
+    if sparse_representation.shape != dense_representation.shape:
+        raise ValueError("Sparse and dense representations must have equal shape")
+    if not 0.0 <= confidence_threshold < 1.0:
+        raise ValueError("confidence_threshold must be in [0, 1)")
+    if temperature <= 0.0:
+        raise ValueError("temperature must be positive")
+
+    dense_target = dense_representation.detach()
+    sparse_normalized = F.normalize(sparse_representation, dim=-1)
+    dense_normalized = F.normalize(dense_target, dim=-1)
+    per_sample = 1.0 - (
+        sparse_normalized * dense_normalized
+    ).sum(dim=-1)
+
+    dense_probability = torch.softmax(
+        dense_logits.detach() / float(temperature), dim=-1
+    )
+    confidence = dense_probability.amax(dim=-1)
+    gate = (
+        (confidence - confidence_threshold)
+        / (1.0 - confidence_threshold)
+    ).clamp(0.0, 1.0)
+    gate_sum = gate.sum()
+    if gate_sum.item() > 0.0:
+        loss = (per_sample * gate).sum() / gate_sum
+    else:
+        loss = per_sample.sum() * 0.0
+    coverage = (gate > 0.0).to(per_sample.dtype).mean()
+    return loss, coverage

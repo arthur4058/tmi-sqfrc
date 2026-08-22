@@ -165,6 +165,20 @@ class Options(object):
                                  default=0.2)
         self.parser.add_argument('--paired_consistency_ramp_epochs', type=int,
                                  default=10)
+        self.parser.add_argument('--low_rate_representation_recovery',
+                                 action='store_true',
+                                 help='Recover sparse pooled features from paired dense views')
+        self.parser.add_argument('--representation_recovery_hidden_dim',
+                                 type=int, default=128)
+        self.parser.add_argument('--representation_recovery_gate_init',
+                                 type=float, default=0.2)
+        self.parser.add_argument('--representation_recovery_weight',
+                                 type=float, default=0.2)
+        self.parser.add_argument(
+            '--representation_recovery_confidence_threshold',
+            type=float, default=0.5)
+        self.parser.add_argument('--representation_recovery_temperature',
+                                 type=float, default=1.0)
 
     def parse(self):
 
