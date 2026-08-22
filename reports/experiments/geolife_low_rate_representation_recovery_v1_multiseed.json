@@ -1,0 +1,89 @@
+{
+  "protocol": "geolife-low-rate-representation-recovery-v1-multiseed",
+  "sampling_interval_seconds": 60,
+  "seeds": [
+    10086,
+    42,
+    2024
+  ],
+  "rows": [
+    {
+      "seed": 10086,
+      "v2": {
+        "accuracy": 0.7248881659211062,
+        "macro_f1": 0.6600421292791709
+      },
+      "fusion": {
+        "accuracy": 0.7332248881659211,
+        "macro_f1": 0.6734377009539616
+      },
+      "delta_vs_v2": {
+        "accuracy": 0.008336722244814965,
+        "macro_f1": 0.013395571674790663
+      }
+    },
+    {
+      "seed": 42,
+      "v2": {
+        "accuracy": 0.6596177307848718,
+        "macro_f1": 0.6059955660780287
+      },
+      "fusion": {
+        "accuracy": 0.6693777958519723,
+        "macro_f1": 0.6078363657220799
+      },
+      "delta_vs_v2": {
+        "accuracy": 0.009760065067100476,
+        "macro_f1": 0.0018407996440511498
+      }
+    },
+    {
+      "seed": 2024,
+      "v2": {
+        "accuracy": 0.7082147214314762,
+        "macro_f1": 0.6491192748560878
+      },
+      "fusion": {
+        "accuracy": 0.7082147214314762,
+        "macro_f1": 0.6382398369041453
+      },
+      "delta_vs_v2": {
+        "accuracy": 0.0,
+        "macro_f1": -0.010879437951942461
+      }
+    }
+  ],
+  "aggregate": {
+    "accuracy": {
+      "v2": {
+        "mean": 0.6975735393791513,
+        "sample_std": 0.0339114065223102
+      },
+      "fusion": {
+        "mean": 0.7036058018164565,
+        "sample_std": 0.03217210599649579
+      },
+      "delta_vs_v2": {
+        "mean": 0.006032262437305147,
+        "sample_std": 0.005272344713865919
+      },
+      "positive_seeds": 2
+    },
+    "macro_f1": {
+      "v2": {
+        "mean": 0.6383856567377625,
+        "sample_std": 0.02857736284012742
+      },
+      "fusion": {
+        "mean": 0.6398379678600622,
+        "sample_std": 0.03282985398940462
+      },
+      "delta_vs_v2": {
+        "mean": 0.0014523111222997838,
+        "sample_std": 0.01214216684093683
+      },
+      "positive_seeds": 2
+    }
+  },
+  "decision": "not_yet_stable_enough_for_primary_claim"
+}
