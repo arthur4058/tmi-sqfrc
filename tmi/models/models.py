@@ -61,9 +61,41 @@ def model_factory(config, data):
             ),
             sparse_physical_only=config.get('sparse_physical_only', False),
             sparse_trajectory_hidden_dim=config.get('sparse_trajectory_hidden_dim', 32),
-            sparse_trajectory_gate_init=config.get('sparse_trajectory_gate_init', 0.1)
+            sparse_trajectory_gate_init=config.get('sparse_trajectory_gate_init', 0.1),
+            short_multiscale_fusion=config.get('short_multiscale_fusion', False),
+            short_multiscale_width=config.get('short_multiscale_width', 96),
+            short_multiscale_logit_correction=config.get(
+                'short_multiscale_logit_correction', False
+            ),
+            freeze_base_model_for_short=config.get(
+                'freeze_base_model_for_short', False
+            ),
+            freeze_short_transformer_branches=config.get(
+                'freeze_short_transformer_branches', False
+            ),
+            short_multiscale_gate_init=config.get('short_multiscale_gate_init', 0.1),
+            short_multiscale_correction_scale=config.get(
+                'short_multiscale_correction_scale', 1.0
+            )
         )
         
+        base_checkpoint = config.get('initialize_base_model')
+        if base_checkpoint:
+            checkpoint = torch.load(
+                base_checkpoint, map_location='cpu', weights_only=True
+            )
+            source_state = checkpoint.get('state_dict', checkpoint)
+            target_state = model.state_dict()
+            compatible = {
+                key: value for key, value in source_state.items()
+                if key in target_state and target_state[key].shape == value.shape
+            }
+            result = model.load_state_dict(compatible, strict=False)
+            logger.info(
+                "从基础 checkpoint 初始化 %d 个参数张量；新增参数 %d 个",
+                len(compatible), len(result.missing_keys)
+            )
+
         # 记录日志
         logger.info(f"已创建双分支分类模型，使用TSTransformerEncoderForDualBranch作为分支编码器")
         
@@ -799,7 +831,14 @@ class DualTSTransformerEncoderClassifier(nn.Module):
                  sparse_trajectory_logit_correction=False,
                  freeze_base_model_for_sparse=False,
                  sparse_trajectory_correction_scale=1.0,
-                 sparse_physical_only=False):
+                 sparse_physical_only=False,
+                 short_multiscale_fusion=False,
+                 short_multiscale_width=96,
+                 short_multiscale_logit_correction=False,
+                 freeze_base_model_for_short=False,
+                 freeze_short_transformer_branches=False,
+                 short_multiscale_gate_init=0.1,
+                 short_multiscale_correction_scale=1.0):
         super(DualTSTransformerEncoderClassifier, self).__init__()
         self.num_classes = num_classes
         
@@ -817,6 +856,27 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             sparse_trajectory_correction_scale
         )
         self.sparse_physical_only = sparse_physical_only
+        self.short_multiscale_fusion = short_multiscale_fusion
+        self.short_multiscale_logit_correction = short_multiscale_logit_correction
+        self.freeze_base_model_for_short = freeze_base_model_for_short
+        self.freeze_short_transformer_branches = (
+            freeze_short_transformer_branches
+        )
+        self.short_multiscale_correction_scale = float(
+            short_multiscale_correction_scale
+        )
+        self.short_multiscale_enabled = (
+            short_multiscale_fusion or short_multiscale_logit_correction
+        )
+        self.short_multiscale_width = int(short_multiscale_width)
+        if short_multiscale_fusion and short_multiscale_logit_correction:
+            raise ValueError("choose feature fusion or logit correction, not both")
+        if self.freeze_base_model_for_short and not short_multiscale_logit_correction:
+            raise ValueError(
+                "freeze_base_model_for_short requires logit correction"
+            )
+        if self.short_multiscale_enabled and self.short_multiscale_width % 3:
+            raise ValueError("short_multiscale_width must be divisible by 3")
         if not 0.0 <= self.sparse_trajectory_correction_scale <= 1.0:
             raise ValueError(
                 "sparse_trajectory_correction_scale must be in [0, 1]"
@@ -866,9 +926,32 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         # 全局池化层
         self.global_avg_pool = nn.AdaptiveAvgPool1d(1)
         self.global_max_pool = nn.AdaptiveMaxPool1d(1)
-        
+
+        if self.short_multiscale_enabled:
+            branch_width = self.short_multiscale_width // 3
+            self.short_multiscale_branches = nn.ModuleList([
+                nn.Conv1d(total_channels, branch_width, kernel_size=1),
+                nn.Conv1d(total_channels, branch_width, kernel_size=3, padding=1),
+                nn.Conv1d(total_channels, branch_width, kernel_size=5, padding=2),
+            ])
+            self.short_multiscale_merge = nn.Sequential(
+                nn.Conv1d(self.short_multiscale_width, 64, kernel_size=1),
+                nn.GELU(),
+                nn.Conv1d(64, 64, kernel_size=3, padding=1),
+            )
+            self.short_multiscale_norm = nn.LayerNorm(64)
+            self.short_statistics_projector = nn.Sequential(
+                nn.LayerNorm(total_channels * 4),
+                nn.Linear(total_channels * 4, 64),
+                nn.GELU(),
+                nn.Dropout(dropout),
+            )
+
         # 分类层
         fc_input_dim = 64 * 2  # 全局平均池化 + 全局最大池化
+        if self.short_multiscale_fusion:
+            # Multi-scale mean/std/max plus raw fused mean/std/min/max.
+            fc_input_dim += 64 * 3 + 64
         self.classifier = nn.Sequential(
             nn.Linear(fc_input_dim, 128),
             nn.BatchNorm1d(128),
@@ -876,6 +959,25 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             nn.Dropout(dropout),
             nn.Linear(128, num_classes)
         )
+
+        if self.short_multiscale_logit_correction:
+            if not 0.0 < short_multiscale_gate_init < 1.0:
+                raise ValueError("short_multiscale_gate_init must be in (0, 1)")
+            self.short_multiscale_correction = nn.Sequential(
+                nn.LayerNorm(64 * 4),
+                nn.Linear(64 * 4, 128),
+                nn.GELU(),
+                nn.Dropout(dropout),
+                nn.Linear(128, num_classes),
+            )
+            nn.init.zeros_(self.short_multiscale_correction[-1].weight)
+            nn.init.zeros_(self.short_multiscale_correction[-1].bias)
+            self.short_multiscale_gate_logit = nn.Parameter(torch.tensor(
+                math.log(
+                    short_multiscale_gate_init
+                    / (1.0 - short_multiscale_gate_init)
+                )
+            ))
 
         if self.sparse_trajectory_residual or self.sparse_trajectory_logit_correction:
             # Optional parameters must not change the DataLoader shuffle stream.
@@ -930,6 +1032,14 @@ class DualTSTransformerEncoderClassifier(nn.Module):
             for module in self._base_modules():
                 for parameter in module.parameters():
                     parameter.requires_grad = False
+        if self.freeze_base_model_for_short:
+            for module in self._base_modules():
+                for parameter in module.parameters():
+                    parameter.requires_grad = False
+        elif self.freeze_short_transformer_branches:
+            for module in (self.trajectory_branch, self.feature_branch):
+                for parameter in module.parameters():
+                    parameter.requires_grad = False
 
     def _base_modules(self):
         return (
@@ -941,10 +1051,15 @@ class DualTSTransformerEncoderClassifier(nn.Module):
 
     def train(self, mode=True):
         super().train(mode)
-        if mode and self.freeze_base_model_for_sparse:
+        if mode and (
+            self.freeze_base_model_for_sparse or self.freeze_base_model_for_short
+        ):
             # Frozen BatchNorm/dropout must retain the exact B0 inference state.
             for module in self._base_modules():
                 module.eval()
+        elif mode and self.freeze_short_transformer_branches:
+            self.trajectory_branch.eval()
+            self.feature_branch.eval()
         return self
 
     @staticmethod
@@ -1088,9 +1203,60 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         # 在特征维度上拼接
         combined_output = torch.cat([trajectory_output, feature_output], dim=2)
         
+        joint_mask = padding_mask1 & padding_mask2
+
         # 转换维度用于卷积操作
+        combined_sequence = combined_output
         combined_output = combined_output.permute(0, 2, 1)  # (batch_size, channels, seq_len)
-        
+
+        short_pooled = None
+        if self.short_multiscale_enabled:
+            short_output = torch.cat([
+                branch(combined_output)
+                for branch in self.short_multiscale_branches
+            ], dim=1)
+            short_output = self.short_multiscale_merge(F.gelu(short_output))
+            short_output = self.short_multiscale_norm(
+                short_output.permute(0, 2, 1)
+            )
+            short_output = F.gelu(short_output)
+            valid = joint_mask.unsqueeze(-1)
+            valid_float = valid.to(short_output.dtype)
+            count = valid_float.sum(dim=1).clamp_min(1.0)
+            short_mean = (short_output * valid_float).sum(dim=1) / count
+            short_variance = (
+                (short_output - short_mean.unsqueeze(1)).square() * valid_float
+            ).sum(dim=1) / count
+            short_max = short_output.masked_fill(
+                ~valid, torch.finfo(short_output.dtype).min
+            ).amax(dim=1)
+            has_valid = joint_mask.any(dim=1, keepdim=True)
+            short_max = torch.where(
+                has_valid, short_max, torch.zeros_like(short_max)
+            )
+
+            raw_count = valid_float.sum(dim=1).clamp_min(1.0)
+            raw_mean = (combined_sequence * valid_float).sum(dim=1) / raw_count
+            raw_variance = (
+                (combined_sequence - raw_mean.unsqueeze(1)).square()
+                * valid_float
+            ).sum(dim=1) / raw_count
+            raw_min = combined_sequence.masked_fill(
+                ~valid, torch.finfo(combined_sequence.dtype).max
+            ).amin(dim=1)
+            raw_max = combined_sequence.masked_fill(
+                ~valid, torch.finfo(combined_sequence.dtype).min
+            ).amax(dim=1)
+            raw_min = torch.where(has_valid, raw_min, torch.zeros_like(raw_min))
+            raw_max = torch.where(has_valid, raw_max, torch.zeros_like(raw_max))
+            raw_statistics = self.short_statistics_projector(torch.cat([
+                raw_mean, torch.sqrt(raw_variance + 1e-6), raw_min, raw_max
+            ], dim=1))
+            short_pooled = torch.cat([
+                short_mean, torch.sqrt(short_variance + 1e-6),
+                short_max, raw_statistics
+            ], dim=1)
+
         # 应用卷积层
         conv_output = self.conv_layers(combined_output)  # (batch_size, 64, seq_len/2)
 
@@ -1110,6 +1276,8 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         
         # 融合池化结果
         pooled_features = torch.cat([avg_pooled, max_pooled], dim=1)  # (batch_size, 128)
+        if short_pooled is not None and self.short_multiscale_fusion:
+            pooled_features = torch.cat([pooled_features, short_pooled], dim=1)
 
         if sparse_residual is not None and self.sparse_trajectory_residual:
             pooled_features = pooled_features + sparse_gate * sparse_residual
@@ -1123,6 +1291,18 @@ class DualTSTransformerEncoderClassifier(nn.Module):
         
         # 分类
         output = self.classifier(pooled_features)  # (batch_size, num_classes)
+        if self.short_multiscale_logit_correction:
+            short_correction = self.short_multiscale_correction(short_pooled)
+            short_gate = torch.sigmoid(self.short_multiscale_gate_logit)
+            output = output + (
+                self.short_multiscale_correction_scale
+                * short_gate
+                * short_correction
+            )
+            self.last_short_multiscale_gate = short_gate.detach().item()
+            self.last_short_multiscale_correction_norm = (
+                short_correction.detach().norm(dim=1).mean().item()
+            )
         if sparse_residual is not None and self.sparse_trajectory_logit_correction:
             output = output + (
                 self.sparse_trajectory_correction_scale

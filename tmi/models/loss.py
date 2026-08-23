@@ -25,7 +25,15 @@ def get_loss_module(config):
         return TrajRLPretrainLoss(reduction='none', disable_mask=disable_mask)
 
     if "classification" in task:
-        return NoFussCrossEntropyLoss(reduction='none')  # outputs loss for each batch sample
+        class_weights = config.get("classification_class_weights")
+        weight = None if class_weights is None else torch.tensor(
+            class_weights, dtype=torch.float32
+        )
+        return NoFussCrossEntropyLoss(
+            weight=weight,
+            reduction='none',
+            label_smoothing=float(config.get("classification_label_smoothing", 0.0))
+        )  # outputs loss for each batch sample
 
     if task == "regression":
         return nn.MSELoss(reduction='none')  # outputs loss for each batch sample
@@ -49,8 +57,14 @@ class NoFussCrossEntropyLoss(nn.CrossEntropyLoss):
     """
 
     def forward(self, inp, target):
-        return F.cross_entropy(inp, target.long().squeeze(), weight=self.weight,
-                               ignore_index=self.ignore_index, reduction=self.reduction)
+        weight = self.weight
+        if weight is not None and weight.device != inp.device:
+            weight = weight.to(inp.device)
+        return F.cross_entropy(
+            inp, target.long().squeeze(), weight=weight,
+            ignore_index=self.ignore_index, reduction=self.reduction,
+            label_smoothing=self.label_smoothing
+        )
 
 
 class MaskedMSELoss(nn.Module):
