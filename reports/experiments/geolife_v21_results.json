@@ -1,0 +1,50 @@
+{
+  "protocol": "geolife-v2-v16-user-robust-weight-v21",
+  "sampling_interval_seconds": 60,
+  "selection": "per-seed user-disjoint validation only",
+  "seeds": [
+    {
+      "seed": 42,
+      "weight": 0.01,
+      "v2_accuracy": 0.6596177308,
+      "v2_macro_f1": 0.6059955661,
+      "v21_accuracy": 0.6602277349,
+      "v21_macro_f1": 0.6063907333,
+      "accuracy_delta_pp": 0.0610004067,
+      "macro_f1_delta_pp": 0.0395167264
+    },
+    {
+      "seed": 2024,
+      "weight": 0.20,
+      "v2_accuracy": 0.7082147214,
+      "v2_macro_f1": 0.6491192749,
+      "v21_accuracy": 0.7153314355,
+      "v21_macro_f1": 0.6561309006,
+      "accuracy_delta_pp": 0.7116714111,
+      "macro_f1_delta_pp": 0.7011625787
+    },
+    {
+      "seed": 10086,
+      "weight": 0.17,
+      "v2_accuracy": 0.7248881659,
+      "v2_macro_f1": 0.6600421293,
+      "v21_accuracy": 0.7299715331,
+      "v21_macro_f1": 0.6699330627,
+      "accuracy_delta_pp": 0.5083367222,
+      "macro_f1_delta_pp": 0.9890933425
+    }
+  ],
+  "mean": {
+    "v2_accuracy": 0.6975735394,
+    "v2_macro_f1": 0.6383856568,
+    "v21_accuracy": 0.7018435678,
+    "v21_macro_f1": 0.6441515656,
+    "accuracy_delta_pp": 0.4270028467,
+    "macro_f1_delta_pp": 0.5765908826
+  },
+  "stability": {
+    "accuracy_positive_seeds": 3,
+    "macro_f1_positive_seeds": 3,
+    "seed_count": 3
+  }
+}
