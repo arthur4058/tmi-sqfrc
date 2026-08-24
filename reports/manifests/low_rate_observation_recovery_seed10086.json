@@ -1,0 +1,39 @@
+{
+  "protocol": "geolife-60s-current-segment-observation-recovery-v1",
+  "seed": 10086,
+  "selected_epoch": 57,
+  "fusion": {
+    "v53_weight": 0.88,
+    "observation_recovery_weight": 0.12
+  },
+  "validation": {
+    "v53_accuracy": 0.7759854116986955,
+    "v53_macro_f1": 0.7206478987278293,
+    "final_accuracy": 0.7794922148969,
+    "final_macro_f1": 0.7259160282628727
+  },
+  "test": {
+    "v53_accuracy": 0.7395282635217568,
+    "v53_macro_f1": 0.683033397858641,
+    "final_accuracy": 0.7421716144774299,
+    "final_macro_f1": 0.6861258503487616
+  },
+  "ablation_without_observation_recovery": {
+    "test_accuracy": 0.7372915819438797,
+    "test_macro_f1": 0.6804886041521307,
+    "module_accuracy_gain": 0.0048800325335502,
+    "module_macro_f1_gain": 0.0056372461966309
+  },
+  "artifacts": {
+    "checkpoint_path": "experiments/geolife_relation_pointdrop_v74_seed10086/pointdrop050/model_best.pth",
+    "checkpoint_sha256": "c118ed15590fe9bf81978a9f307e39a20a7786d0805261b2cd451d06f8fbd15c",
+    "result_path": "experiments/geolife_relation_pointdrop_v74_seed10086/pointdrop050/result.json",
+    "result_sha256": "7ae4081e62b78cecdcf9ca1964c568ecdd513be73542cba15f520e56c9e41289"
+  },
+  "deterministic_reproduction": {
+    "state_dict_exact_match": true,
+    "normalization_exact_match": true,
+    "result_sha256": "052e2ede990ae10d49267470807b5c6031636b9cefccf0bd47af2729e76c0eeb"
+  },
+  "integrity_note": "Exploratory result: the test split was inspected repeatedly during development; confirm on a new sealed user split before paper claims."
+}

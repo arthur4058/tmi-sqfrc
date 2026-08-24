@@ -1,0 +1,35 @@
+{
+  "protocol": "geolife-60s-current-segment-observation-recovery-v1",
+  "seed": 10086,
+  "data_root": "./data/geolife_five_rate_fixed_60s_features",
+  "base_predictions": "./experiments/geolife_nohistory_v58_seed10086/v53_predictions.npz",
+  "training_entrypoint": "python -m scripts.train_relation_pointdrop_v74",
+  "input_scope": "current 60-second segment only",
+  "uses_user_id_at_inference": false,
+  "uses_history_or_future": false,
+  "model": {
+    "name": "multi-lag point-relation encoder",
+    "width": 96,
+    "layers": 2,
+    "maximum_observations": 6
+  },
+  "observation_drop": {
+    "probability": 0.5,
+    "maximum_dropped_internal_points": 1,
+    "preserve_endpoints": true,
+    "classification_weight": 0.35,
+    "consistency_weight": 0.1
+  },
+  "optimization": {
+    "epochs": 70,
+    "patience": 12,
+    "batch_size": 512,
+    "learning_rate": 0.0003
+  },
+  "selection": {
+    "validation": "user-disjoint validation users",
+    "test_gate": "both Accuracy and Macro-F1 validation deltas >= 0.003",
+    "selected_base_fusion_weight": 0.12,
+    "selected_epoch": 57
+  }
+}
