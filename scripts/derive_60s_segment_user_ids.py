@@ -1,4 +1,4 @@
-"""Reproduce S3/S4 ordering and recover user IDs for 60-second segments."""
+"""Reproduce S3/S4 ordering and recover segment user IDs for any fixed rate."""
 
 from __future__ import annotations
 
@@ -115,10 +115,11 @@ def derive(trjs, labels, users, seed=42):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--rate", type=int, choices=(5, 10, 20, 30, 60), default=60)
     args = parser.parse_args()
-    views = ROOT / "data/geolife_five_rate_views/fixed_60s"
-    augmented = ROOT / "data/geolife_five_rate_60s_augmented"
-    features = ROOT / "data/geolife_five_rate_fixed_60s_features"
+    views = ROOT / f"data/geolife_five_rate_views/fixed_{args.rate}s"
+    augmented = ROOT / f"data/geolife_five_rate_{args.rate}s_augmented"
+    features = ROOT / f"data/geolife_five_rate_fixed_{args.rate}s_features"
 
     train_trjs = np.load(views / "train_trjs.npy", allow_pickle=True)
     train_labels = np.load(views / "train_labels.npy")

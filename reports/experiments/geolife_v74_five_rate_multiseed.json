@@ -1,0 +1,949 @@
+{
+  "results": [
+    {
+      "protocol": "geolife-v74-rate-generalized-current-segment-v1",
+      "rate_seconds": 5,
+      "seed": 10086,
+      "anchors": 16,
+      "uses_interpolation": false,
+      "b0_checkpoint": "/home/yc/research/tmi-sqfrc/experiments/geolife_matched_b0_fixed_5s_seed10086/checkpoints/model_best.pth",
+      "settings": {
+        "width": 96,
+        "layers": 2,
+        "drop_probability": 0.5,
+        "drop_weight": 0.35,
+        "consistency_weight": 0.1,
+        "epochs": 70,
+        "patience": 12,
+        "batch_size": 256,
+        "lr": 0.0003
+      },
+      "best_epoch": 21,
+      "temperatures": {
+        "b0": 1.275,
+        "relation_expert": 1.0750000000000002
+      },
+      "validation": {
+        "b0": {
+          "accuracy": 0.846798239386625,
+          "macro_f1": 0.8092144659610389,
+          "per_class_f1": {
+            "Walk": 0.9115785873097314,
+            "Bike": 0.8486212718064153,
+            "Bus": 0.8217721518987342,
+            "Car": 0.7350835322195703,
+            "Train": 0.7290167865707435
+          }
+        },
+        "expert": {
+          "accuracy": 0.8350134885702115,
+          "macro_f1": 0.7844065052672514,
+          "per_class_f1": {
+            "Walk": 0.9043508287292817,
+            "Bike": 0.8527302813017098,
+            "Bus": 0.8013626834381551,
+            "Car": 0.7394429469901169,
+            "Train": 0.6241457858769932
+          }
+        },
+        "fusion": {
+          "weight": 0.42,
+          "metrics": {
+            "accuracy": 0.8614226891949454,
+            "macro_f1": 0.826696863648197,
+            "per_class_f1": {
+              "Walk": 0.9180665066849504,
+              "Bike": 0.8777219430485762,
+              "Bus": 0.8365409289196819,
+              "Car": 0.7630597014925374,
+              "Train": 0.7380952380952381
+            }
+          },
+          "delta": {
+            "accuracy": 0.014624449808320339,
+            "macro_f1": 0.01748239768715809
+          }
+        }
+      },
+      "test": {
+        "b0": {
+          "accuracy": 0.7860908353609084,
+          "macro_f1": 0.7435848376787331,
+          "per_class_f1": {
+            "Walk": 0.8793162393162393,
+            "Bike": 0.7707317073170731,
+            "Bus": 0.6177024482109228,
+            "Car": 0.8134831460674159,
+            "Train": 0.6366906474820144
+          }
+        },
+        "expert": {
+          "accuracy": 0.8023114355231143,
+          "macro_f1": 0.7514224442119714,
+          "per_class_f1": {
+            "Walk": 0.8731241473396999,
+            "Bike": 0.7805695142378559,
+            "Bus": 0.6322314049586776,
+            "Car": 0.8508317425688574,
+            "Train": 0.6203554119547657
+          }
+        },
+        "v74": {
+          "accuracy": 0.8122465531224655,
+          "macro_f1": 0.7703950750624454,
+          "per_class_f1": {
+            "Walk": 0.8870037326094333,
+            "Bike": 0.7871287128712872,
+            "Bus": 0.644474034620506,
+            "Car": 0.8486842105263157,
+            "Train": 0.6846846846846848
+          }
+        },
+        "delta": {
+          "accuracy": 0.026155717761557118,
+          "macro_f1": 0.026810237383712354
+        }
+      }
+    },
+    {
+      "protocol": "geolife-v74-rate-generalized-current-segment-v1",
+      "rate_seconds": 10,
+      "seed": 10086,
+      "anchors": 16,
+      "uses_interpolation": false,
+      "b0_checkpoint": "/home/yc/research/tmi-sqfrc/experiments/geolife_matched_b0_fixed_10s_seed10086/checkpoints/model_best.pth",
+      "settings": {
+        "width": 96,
+        "layers": 2,
+        "drop_probability": 0.5,
+        "drop_weight": 0.35,
+        "consistency_weight": 0.1,
+        "epochs": 70,
+        "patience": 12,
+        "batch_size": 256,
+        "lr": 0.0003
+      },
+      "best_epoch": 35,
+      "temperatures": {
+        "b0": 2.1,
+        "relation_expert": 1.2000000000000002
+      },
+      "validation": {
+        "b0": {
+          "accuracy": 0.8060177481974486,
+          "macro_f1": 0.7710767859873461,
+          "per_class_f1": {
+            "Walk": 0.8981793661496965,
+            "Bike": 0.8540478905359179,
+            "Bus": 0.7660617949975478,
+            "Car": 0.5904282115869017,
+            "Train": 0.7466666666666666
+          }
+        },
+        "expert": {
+          "accuracy": 0.8219633943427621,
+          "macro_f1": 0.7927356251076798,
+          "per_class_f1": {
+            "Walk": 0.9046132500867152,
+            "Bike": 0.8498871331828441,
+            "Bus": 0.7734233065144043,
+            "Car": 0.7035607035607037,
+            "Train": 0.7321937321937322
+          }
+        },
+        "fusion": {
+          "weight": 0.51,
+          "metrics": {
+            "accuracy": 0.8391569606211869,
+            "macro_f1": 0.8166896670435866,
+            "per_class_f1": {
+              "Walk": 0.9110054347826086,
+              "Bike": 0.8757126567844926,
+              "Bus": 0.7940267765190525,
+              "Car": 0.7147335423197493,
+              "Train": 0.7879699248120301
+            }
+          },
+          "delta": {
+            "accuracy": 0.033139212423738296,
+            "macro_f1": 0.045612881056240506
+          }
+        }
+      },
+      "test": {
+        "b0": {
+          "accuracy": 0.7403359643796802,
+          "macro_f1": 0.6892445075255574,
+          "per_class_f1": {
+            "Walk": 0.8700866089273817,
+            "Bike": 0.7376916868442291,
+            "Bus": 0.5760673481659652,
+            "Car": 0.7487332339791356,
+            "Train": 0.5136436597110755
+          }
+        },
+        "expert": {
+          "accuracy": 0.7658368751264926,
+          "macro_f1": 0.7153579376058063,
+          "per_class_f1": {
+            "Walk": 0.8649015614392397,
+            "Bike": 0.7582608695652173,
+            "Bus": 0.5816733067729084,
+            "Car": 0.80256911477241,
+            "Train": 0.5693848354792562
+          }
+        },
+        "v74": {
+          "accuracy": 0.7868852459016393,
+          "macro_f1": 0.7392698770217843,
+          "per_class_f1": {
+            "Walk": 0.8773458445040214,
+            "Bike": 0.7814910025706939,
+            "Bus": 0.6198125836680053,
+            "Car": 0.81709019826864,
+            "Train": 0.6006097560975611
+          }
+        },
+        "delta": {
+          "accuracy": 0.04654928152195914,
+          "macro_f1": 0.050025369496226824
+        }
+      }
+    },
+    {
+      "protocol": "geolife-v74-rate-generalized-current-segment-v1",
+      "rate_seconds": 20,
+      "seed": 10086,
+      "anchors": 16,
+      "uses_interpolation": false,
+      "b0_checkpoint": "/home/yc/research/tmi-sqfrc/experiments/geolife_matched_b0_fixed_20s_seed10086/checkpoints/model_best.pth",
+      "settings": {
+        "width": 96,
+        "layers": 2,
+        "drop_probability": 0.5,
+        "drop_weight": 0.35,
+        "consistency_weight": 0.1,
+        "epochs": 70,
+        "patience": 12,
+        "batch_size": 256,
+        "lr": 0.0003
+      },
+      "best_epoch": 19,
+      "temperatures": {
+        "b0": 1.575,
+        "relation_expert": 1.05
+      },
+      "validation": {
+        "b0": {
+          "accuracy": 0.7944620471139275,
+          "macro_f1": 0.7634966803468638,
+          "per_class_f1": {
+            "Walk": 0.8895921237693389,
+            "Bike": 0.8526027397260274,
+            "Bus": 0.7416291854072964,
+            "Car": 0.6316725978647687,
+            "Train": 0.7019867549668876
+          }
+        },
+        "expert": {
+          "accuracy": 0.8094778895164623,
+          "macro_f1": 0.780328097665292,
+          "per_class_f1": {
+            "Walk": 0.9048117154811715,
+            "Bike": 0.8538205980066446,
+            "Bus": 0.7470634299138605,
+            "Car": 0.676747037188394,
+            "Train": 0.7191977077363897
+          }
+        },
+        "fusion": {
+          "weight": 0.44,
+          "metrics": {
+            "accuracy": 0.824218211874914,
+            "macro_f1": 0.7976916569076933,
+            "per_class_f1": {
+              "Walk": 0.9069807725619261,
+              "Bike": 0.8678414096916299,
+              "Bus": 0.769861609431061,
+              "Car": 0.6996527777777778,
+              "Train": 0.7441217150760719
+            }
+          },
+          "delta": {
+            "accuracy": 0.029756164760986414,
+            "macro_f1": 0.03419497656082948
+          }
+        }
+      },
+      "test": {
+        "b0": {
+          "accuracy": 0.7315789473684211,
+          "macro_f1": 0.6655610422114749,
+          "per_class_f1": {
+            "Walk": 0.8459900638750887,
+            "Bike": 0.7375669472073451,
+            "Bus": 0.569472963723477,
+            "Car": 0.763816332141875,
+            "Train": 0.4109589041095891
+          }
+        },
+        "expert": {
+          "accuracy": 0.7886639676113361,
+          "macro_f1": 0.7270628334449633,
+          "per_class_f1": {
+            "Walk": 0.8761061946902655,
+            "Bike": 0.7819420783645656,
+            "Bus": 0.5962264150943396,
+            "Car": 0.8301787592008412,
+            "Train": 0.5508607198748043
+          }
+        },
+        "v74": {
+          "accuracy": 0.790080971659919,
+          "macro_f1": 0.727065705801122,
+          "per_class_f1": {
+            "Walk": 0.8749571771154504,
+            "Bike": 0.7864798021434459,
+            "Bus": 0.6342182890855457,
+            "Car": 0.8286322511974455,
+            "Train": 0.5110410094637223
+          }
+        },
+        "delta": {
+          "accuracy": 0.05850202429149787,
+          "macro_f1": 0.06150466358964701
+        }
+      }
+    },
+    {
+      "protocol": "geolife-v74-rate-generalized-current-segment-v1",
+      "rate_seconds": 30,
+      "seed": 10086,
+      "anchors": 11,
+      "uses_interpolation": false,
+      "b0_checkpoint": "/home/yc/research/tmi-sqfrc/experiments/geolife_matched_b0_fixed_30s_seed10086/checkpoints/model_best.pth",
+      "settings": {
+        "width": 96,
+        "layers": 2,
+        "drop_probability": 0.5,
+        "drop_weight": 0.35,
+        "consistency_weight": 0.1,
+        "epochs": 70,
+        "patience": 12,
+        "batch_size": 256,
+        "lr": 0.0003
+      },
+      "best_epoch": 23,
+      "temperatures": {
+        "b0": 1.6500000000000001,
+        "relation_expert": 1.125
+      },
+      "validation": {
+        "b0": {
+          "accuracy": 0.7824765063571034,
+          "macro_f1": 0.7452986729291775,
+          "per_class_f1": {
+            "Walk": 0.8950542822677924,
+            "Bike": 0.8408304498269896,
+            "Bus": 0.7139656460044809,
+            "Car": 0.5988187187641981,
+            "Train": 0.6778242677824268
+          }
+        },
+        "expert": {
+          "accuracy": 0.7961580983969043,
+          "macro_f1": 0.7591328134772928,
+          "per_class_f1": {
+            "Walk": 0.8967086834733893,
+            "Bike": 0.821963394342762,
+            "Bus": 0.7392857142857142,
+            "Car": 0.6621507197290432,
+            "Train": 0.6755555555555557
+          }
+        },
+        "fusion": {
+          "weight": 0.45,
+          "metrics": {
+            "accuracy": 0.8079049198452184,
+            "macro_f1": 0.7743936674719609,
+            "per_class_f1": {
+              "Walk": 0.904555690282349,
+              "Bike": 0.850896860986547,
+              "Bus": 0.7456251585087496,
+              "Car": 0.6695919262834577,
+              "Train": 0.7012987012987013
+            }
+          },
+          "delta": {
+            "accuracy": 0.025428413488114976,
+            "macro_f1": 0.029094994542783414
+          }
+        }
+      },
+      "test": {
+        "b0": {
+          "accuracy": 0.7289473684210527,
+          "macro_f1": 0.6726570232872745,
+          "per_class_f1": {
+            "Walk": 0.863714383796773,
+            "Bike": 0.751736111111111,
+            "Bus": 0.5545335085413929,
+            "Car": 0.7456189937817976,
+            "Train": 0.447682119205298
+          }
+        },
+        "expert": {
+          "accuracy": 0.751417004048583,
+          "macro_f1": 0.692061335821112,
+          "per_class_f1": {
+            "Walk": 0.8662551440329218,
+            "Bike": 0.74442538593482,
+            "Bus": 0.5629838142153414,
+            "Car": 0.7831062670299728,
+            "Train": 0.5035360678925035
+          }
+        },
+        "v74": {
+          "accuracy": 0.7657894736842106,
+          "macro_f1": 0.7074294823454901,
+          "per_class_f1": {
+            "Walk": 0.8751282928498119,
+            "Bike": 0.7671232876712331,
+            "Bus": 0.5939902166317261,
+            "Car": 0.7944307944307945,
+            "Train": 0.5064748201438849
+          }
+        },
+        "delta": {
+          "accuracy": 0.0368421052631579,
+          "macro_f1": 0.03477245905821558
+        }
+      }
+    },
+    {
+      "protocol": "geolife-v74-rate-generalized-current-segment-v1",
+      "rate_seconds": 60,
+      "seed": 10086,
+      "anchors": 6,
+      "uses_interpolation": false,
+      "b0_checkpoint": "/home/yc/research/tmi-sqfrc/experiments/geolife_matched_b0_fixed_60s_seed10086/checkpoints/model_best.pth",
+      "settings": {
+        "width": 96,
+        "layers": 2,
+        "drop_probability": 0.5,
+        "drop_weight": 0.35,
+        "consistency_weight": 0.1,
+        "epochs": 70,
+        "patience": 12,
+        "batch_size": 256,
+        "lr": 0.0003
+      },
+      "best_epoch": 31,
+      "temperatures": {
+        "b0": 0.95,
+        "relation_expert": 1.15
+      },
+      "validation": {
+        "b0": {
+          "accuracy": 0.7246458128769814,
+          "macro_f1": 0.6338137600771283,
+          "per_class_f1": {
+            "Walk": 0.8826125330979699,
+            "Bike": 0.7488396080453842,
+            "Bus": 0.6376496191512514,
+            "Car": 0.5567095970087246,
+            "Train": 0.3432574430823117
+          }
+        },
+        "expert": {
+          "accuracy": 0.7563473137887502,
+          "macro_f1": 0.6885695933944306,
+          "per_class_f1": {
+            "Walk": 0.8851530702530526,
+            "Bike": 0.7665198237885462,
+            "Bus": 0.7015463917525774,
+            "Car": 0.6056338028169014,
+            "Train": 0.4839948783610756
+          }
+        },
+        "fusion": {
+          "weight": 0.54,
+          "metrics": {
+            "accuracy": 0.766306634871651,
+            "macro_f1": 0.7063018565284965,
+            "per_class_f1": {
+              "Walk": 0.8854532677442023,
+              "Bike": 0.7787895018746653,
+              "Bus": 0.6999474513925381,
+              "Car": 0.6379072969251951,
+              "Train": 0.5294117647058824
+            }
+          },
+          "delta": {
+            "accuracy": 0.04166082199466958,
+            "macro_f1": 0.07248809645136822
+          }
+        }
+      },
+      "test": {
+        "b0": {
+          "accuracy": 0.7155347702318016,
+          "macro_f1": 0.6373460933052366,
+          "per_class_f1": {
+            "Walk": 0.8473520249221183,
+            "Bike": 0.6744017403915881,
+            "Bus": 0.5228095582910934,
+            "Car": 0.7466447548616817,
+            "Train": 0.3955223880597015
+          }
+        },
+        "expert": {
+          "accuracy": 0.6807645384302562,
+          "macro_f1": 0.6256636646425203,
+          "per_class_f1": {
+            "Walk": 0.8521560574948667,
+            "Bike": 0.6789915966386555,
+            "Bus": 0.5027173913043478,
+            "Car": 0.6819672131147542,
+            "Train": 0.41248606465997767
+          }
+        },
+        "v74": {
+          "accuracy": 0.7242781618544124,
+          "macro_f1": 0.6637973333665913,
+          "per_class_f1": {
+            "Walk": 0.856948228882834,
+            "Bike": 0.6992125984251968,
+            "Bus": 0.5309992706053975,
+            "Car": 0.7464709203839638,
+            "Train": 0.4853556485355648
+          }
+        },
+        "delta": {
+          "accuracy": 0.008743391622610841,
+          "macro_f1": 0.026451240061354686
+        }
+      }
+    },
+    {
+      "protocol": "geolife-v74-rate-generalized-current-segment-v1",
+      "rate_seconds": 30,
+      "seed": 42,
+      "anchors": 11,
+      "uses_interpolation": false,
+      "b0_checkpoint": "/home/yc/research/tmi-sqfrc/experiments/geolife_matched_b0_fixed_30s_seed42/checkpoints/model_best.pth",
+      "settings": {
+        "width": 96,
+        "layers": 2,
+        "drop_probability": 0.5,
+        "drop_weight": 0.35,
+        "consistency_weight": 0.1,
+        "epochs": 70,
+        "patience": 12,
+        "batch_size": 256,
+        "lr": 0.0003
+      },
+      "best_epoch": 17,
+      "temperatures": {
+        "b0": 1.375,
+        "relation_expert": 1.05
+      },
+      "validation": {
+        "b0": {
+          "accuracy": 0.7857932559425097,
+          "macro_f1": 0.7421342880134729,
+          "per_class_f1": {
+            "Walk": 0.8969233443420823,
+            "Bike": 0.843492586490939,
+            "Bus": 0.7265166340508806,
+            "Car": 0.590513068731849,
+            "Train": 0.6532258064516129
+          }
+        },
+        "expert": {
+          "accuracy": 0.7921503593145384,
+          "macro_f1": 0.7512899129784641,
+          "per_class_f1": {
+            "Walk": 0.8982223771348902,
+            "Bike": 0.8297520661157025,
+            "Bus": 0.7327608639084049,
+            "Car": 0.6449428692340246,
+            "Train": 0.6507713884992986
+          }
+        },
+        "fusion": {
+          "weight": 0.56,
+          "metrics": {
+            "accuracy": 0.806522940851299,
+            "macro_f1": 0.7690091367026695,
+            "per_class_f1": {
+              "Walk": 0.9031363715127362,
+              "Bike": 0.8517490283176012,
+              "Bus": 0.7477064220183485,
+              "Car": 0.6675567423230975,
+              "Train": 0.6748971193415638
+            }
+          },
+          "delta": {
+            "accuracy": 0.020729684908789348,
+            "macro_f1": 0.02687484868919654
+          }
+        }
+      },
+      "test": {
+        "b0": {
+          "accuracy": 0.7107287449392713,
+          "macro_f1": 0.660037831144562,
+          "per_class_f1": {
+            "Walk": 0.8587219343696028,
+            "Bike": 0.7573770491803278,
+            "Bus": 0.5684468999386126,
+            "Car": 0.7076830732292918,
+            "Train": 0.4079601990049751
+          }
+        },
+        "expert": {
+          "accuracy": 0.75,
+          "macro_f1": 0.6893680519154981,
+          "per_class_f1": {
+            "Walk": 0.8542372881355933,
+            "Bike": 0.7469026548672567,
+            "Bus": 0.5766423357664233,
+            "Car": 0.7869387755102041,
+            "Train": 0.4821192052980133
+          }
+        },
+        "v74": {
+          "accuracy": 0.7605263157894737,
+          "macro_f1": 0.7053353691407206,
+          "per_class_f1": {
+            "Walk": 0.8671901672925912,
+            "Bike": 0.7733105218135159,
+            "Bus": 0.5994358251057827,
+            "Car": 0.7867403314917129,
+            "Train": 0.5
+          }
+        },
+        "delta": {
+          "accuracy": 0.04979757085020242,
+          "macro_f1": 0.04529753799615854
+        }
+      }
+    },
+    {
+      "protocol": "geolife-v74-rate-generalized-current-segment-v1",
+      "rate_seconds": 30,
+      "seed": 2024,
+      "anchors": 11,
+      "uses_interpolation": false,
+      "b0_checkpoint": "/home/yc/research/tmi-sqfrc/experiments/geolife_matched_b0_fixed_30s_seed2024/checkpoints/model_best.pth",
+      "settings": {
+        "width": 96,
+        "layers": 2,
+        "drop_probability": 0.5,
+        "drop_weight": 0.35,
+        "consistency_weight": 0.1,
+        "epochs": 70,
+        "patience": 12,
+        "batch_size": 256,
+        "lr": 0.0003
+      },
+      "best_epoch": 31,
+      "temperatures": {
+        "b0": 1.6500000000000001,
+        "relation_expert": 1.175
+      },
+      "validation": {
+        "b0": {
+          "accuracy": 0.7772249861802101,
+          "macro_f1": 0.7297519127763363,
+          "per_class_f1": {
+            "Walk": 0.8896660255289386,
+            "Bike": 0.8342602892102335,
+            "Bus": 0.7292418772563176,
+            "Car": 0.5617529880478087,
+            "Train": 0.6338383838383839
+          }
+        },
+        "expert": {
+          "accuracy": 0.7982310668877833,
+          "macro_f1": 0.7614283528223097,
+          "per_class_f1": {
+            "Walk": 0.897136797454931,
+            "Bike": 0.812805208898535,
+            "Bus": 0.74750499001996,
+            "Car": 0.6637323943661972,
+            "Train": 0.6859623733719248
+          }
+        },
+        "fusion": {
+          "weight": 0.55,
+          "metrics": {
+            "accuracy": 0.8098396904367053,
+            "macro_f1": 0.7736228763354489,
+            "per_class_f1": {
+              "Walk": 0.9022898094738682,
+              "Bike": 0.8410596026490066,
+              "Bus": 0.7593873517786561,
+              "Car": 0.673394495412844,
+              "Train": 0.6919831223628692
+            }
+          },
+          "delta": {
+            "accuracy": 0.032614704256495264,
+            "macro_f1": 0.043870963559112575
+          }
+        }
+      },
+      "test": {
+        "b0": {
+          "accuracy": 0.6969635627530364,
+          "macro_f1": 0.6479139471460417,
+          "per_class_f1": {
+            "Walk": 0.8514644351464434,
+            "Bike": 0.7454545454545455,
+            "Bus": 0.5379557680812912,
+            "Car": 0.6968325791855203,
+            "Train": 0.40786240786240785
+          }
+        },
+        "expert": {
+          "accuracy": 0.7406882591093117,
+          "macro_f1": 0.6859472983355007,
+          "per_class_f1": {
+            "Walk": 0.8595155709342561,
+            "Bike": 0.7347972972972973,
+            "Bus": 0.5674232309746329,
+            "Car": 0.7700084245998315,
+            "Train": 0.497991967871486
+          }
+        },
+        "v74": {
+          "accuracy": 0.7506072874493928,
+          "macro_f1": 0.696295693702374,
+          "per_class_f1": {
+            "Walk": 0.8704022000687522,
+            "Bike": 0.7561181434599156,
+            "Bus": 0.5960526315789473,
+            "Car": 0.7717607031471506,
+            "Train": 0.48714479025710417
+          }
+        },
+        "delta": {
+          "accuracy": 0.053643724696356365,
+          "macro_f1": 0.04838174655633232
+        }
+      }
+    },
+    {
+      "protocol": "geolife-v74-rate-generalized-current-segment-v1",
+      "rate_seconds": 60,
+      "seed": 42,
+      "anchors": 6,
+      "uses_interpolation": false,
+      "b0_checkpoint": "/home/yc/research/tmi-sqfrc/experiments/geolife_matched_b0_fixed_60s_seed42/checkpoints/model_best.pth",
+      "settings": {
+        "width": 96,
+        "layers": 2,
+        "drop_probability": 0.5,
+        "drop_weight": 0.35,
+        "consistency_weight": 0.1,
+        "epochs": 70,
+        "patience": 12,
+        "batch_size": 256,
+        "lr": 0.0003
+      },
+      "best_epoch": 36,
+      "temperatures": {
+        "b0": 1.35,
+        "relation_expert": 1.2000000000000002
+      },
+      "validation": {
+        "b0": {
+          "accuracy": 0.7440033665310702,
+          "macro_f1": 0.6775493688158938,
+          "per_class_f1": {
+            "Walk": 0.8787722021038109,
+            "Bike": 0.7419354838709677,
+            "Bus": 0.6765061698524074,
+            "Car": 0.5776428932726354,
+            "Train": 0.5128900949796472
+          }
+        },
+        "expert": {
+          "accuracy": 0.7564875859166783,
+          "macro_f1": 0.6914336375991397,
+          "per_class_f1": {
+            "Walk": 0.8905446159304594,
+            "Bike": 0.7588846364133407,
+            "Bus": 0.6911076443057722,
+            "Car": 0.6091278807049255,
+            "Train": 0.5075034106412006
+          }
+        },
+        "fusion": {
+          "weight": 0.43,
+          "metrics": {
+            "accuracy": 0.7731799691401319,
+            "macro_f1": 0.7125777694458794,
+            "per_class_f1": {
+              "Walk": 0.8913270637408569,
+              "Bike": 0.7811408614668218,
+              "Bus": 0.7098873591989988,
+              "Car": 0.6448192771084337,
+              "Train": 0.5357142857142858
+            }
+          },
+          "delta": {
+            "accuracy": 0.02917660260906163,
+            "macro_f1": 0.03502840062998558
+          }
+        }
+      },
+      "test": {
+        "b0": {
+          "accuracy": 0.6470109800732005,
+          "macro_f1": 0.5914289906577792,
+          "per_class_f1": {
+            "Walk": 0.8534048976853404,
+            "Bike": 0.7073386383731212,
+            "Bus": 0.4620650313747861,
+            "Car": 0.6135084427767354,
+            "Train": 0.3208279430789133
+          }
+        },
+        "expert": {
+          "accuracy": 0.7000813338755592,
+          "macro_f1": 0.6404786315211276,
+          "per_class_f1": {
+            "Walk": 0.8564576909900651,
+            "Bike": 0.6655791190864601,
+            "Bus": 0.49653259361997226,
+            "Car": 0.7195828505214368,
+            "Train": 0.46424090338770385
+          }
+        },
+        "v74": {
+          "accuracy": 0.6915412769418463,
+          "macro_f1": 0.6340361691061571,
+          "per_class_f1": {
+            "Walk": 0.8618598382749326,
+            "Bike": 0.7001703577512777,
+            "Bus": 0.49323889246619435,
+            "Car": 0.6909845788849347,
+            "Train": 0.4239271781534461
+          }
+        },
+        "delta": {
+          "accuracy": 0.04453029686864585,
+          "macro_f1": 0.042607178448377914
+        }
+      }
+    },
+    {
+      "protocol": "geolife-v74-rate-generalized-current-segment-v1",
+      "rate_seconds": 60,
+      "seed": 2024,
+      "anchors": 6,
+      "uses_interpolation": false,
+      "b0_checkpoint": "/home/yc/research/tmi-sqfrc/experiments/geolife_matched_b0_fixed_60s_seed2024/checkpoints/model_best.pth",
+      "settings": {
+        "width": 96,
+        "layers": 2,
+        "drop_probability": 0.5,
+        "drop_weight": 0.35,
+        "consistency_weight": 0.1,
+        "epochs": 70,
+        "patience": 12,
+        "batch_size": 256,
+        "lr": 0.0003
+      },
+      "best_epoch": 17,
+      "temperatures": {
+        "b0": 1.275,
+        "relation_expert": 1.025
+      },
+      "validation": {
+        "b0": {
+          "accuracy": 0.7292747930986113,
+          "macro_f1": 0.6397144160386821,
+          "per_class_f1": {
+            "Walk": 0.8790225434520736,
+            "Bike": 0.744,
+            "Bus": 0.6648058868307536,
+            "Car": 0.532449076267172,
+            "Train": 0.3782945736434109
+          }
+        },
+        "expert": {
+          "accuracy": 0.7550848646373965,
+          "macro_f1": 0.6858596425453485,
+          "per_class_f1": {
+            "Walk": 0.8872740163062743,
+            "Bike": 0.7524644030668128,
+            "Bus": 0.7003027245206861,
+            "Car": 0.5942642219087918,
+            "Train": 0.4949928469241774
+          }
+        },
+        "fusion": {
+          "weight": 0.52,
+          "metrics": {
+            "accuracy": 0.760134661242811,
+            "macro_f1": 0.6921243519069333,
+            "per_class_f1": {
+              "Walk": 0.886795743938601,
+              "Bike": 0.7688864017907108,
+              "Bus": 0.6996466431095407,
+              "Car": 0.6037914691943128,
+              "Train": 0.5015015015015014
+            }
+          },
+          "delta": {
+            "accuracy": 0.03085986814419972,
+            "macro_f1": 0.05240993586825127
+          }
+        }
+      },
+      "test": {
+        "b0": {
+          "accuracy": 0.6939812932086213,
+          "macro_f1": 0.6253635955737443,
+          "per_class_f1": {
+            "Walk": 0.8482054659203161,
+            "Bike": 0.6740050804403048,
+            "Bus": 0.5398230088495575,
+            "Car": 0.6978119455943228,
+            "Train": 0.36697247706422015
+          }
+        },
+        "expert": {
+          "accuracy": 0.6848312322082147,
+          "macro_f1": 0.6260743553406704,
+          "per_class_f1": {
+            "Walk": 0.8531420765027322,
+            "Bike": 0.6743232157506153,
+            "Bus": 0.4821664464993395,
+            "Car": 0.6923529411764706,
+            "Train": 0.4283870967741936
+          }
+        },
+        "v74": {
+          "accuracy": 0.7078080520536804,
+          "macro_f1": 0.6478411037308998,
+          "per_class_f1": {
+            "Walk": 0.857046754120417,
+            "Bike": 0.6888519134775375,
+            "Bus": 0.5194462755438365,
+            "Car": 0.7198375870069605,
+            "Train": 0.45402298850574707
+          }
+        },
+        "delta": {
+          "accuracy": 0.013826758845059017,
+          "macro_f1": 0.022477508157155435
+        }
+      }
+    }
+  ]
+}
