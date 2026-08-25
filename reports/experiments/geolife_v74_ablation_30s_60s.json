@@ -1,0 +1,127 @@
+{
+  "protocol": "geolife-v74-ablation-30s-60s-v1",
+  "created_at": "2026-08-25T16:28:48+08:00",
+  "seed": 10086,
+  "rates_seconds": [
+    30,
+    60
+  ],
+  "selection_policy": "checkpoint, temperature and fusion weight selected on validation only",
+  "variants": [
+    {
+      "id": "B0",
+      "name": "原始双分支基线",
+      "relation_encoder": false,
+      "observation_drop": false,
+      "consistency": false,
+      "validation_fusion": false,
+      "rates": {
+        "30": {
+          "accuracy": 0.7289473684210527,
+          "macro_f1": 0.6726570232872745,
+          "delta_accuracy_pp": 0.0,
+          "delta_macro_f1_pp": 0.0
+        },
+        "60": {
+          "accuracy": 0.7155347702318016,
+          "macro_f1": 0.6373460933052366,
+          "delta_accuracy_pp": 0.0,
+          "delta_macro_f1_pp": 0.0
+        }
+      }
+    },
+    {
+      "id": "A1",
+      "name": "仅低采样关系专家",
+      "relation_encoder": true,
+      "observation_drop": false,
+      "consistency": false,
+      "validation_fusion": false,
+      "rates": {
+        "30": {
+          "accuracy": 0.725506072874494,
+          "macro_f1": 0.673290846870124,
+          "delta_accuracy_pp": -0.3441295546558698,
+          "delta_macro_f1_pp": 0.06338235828494687
+        },
+        "60": {
+          "accuracy": 0.6775111834078894,
+          "macro_f1": 0.6199121499488552,
+          "delta_accuracy_pp": -3.802358682391216,
+          "delta_macro_f1_pp": -1.7433943356381376
+        }
+      }
+    },
+    {
+      "id": "A2",
+      "name": "关系专家 + B0融合",
+      "relation_encoder": true,
+      "observation_drop": false,
+      "consistency": false,
+      "validation_fusion": true,
+      "rates": {
+        "30": {
+          "accuracy": 0.7591093117408907,
+          "macro_f1": 0.7030359438009188,
+          "delta_accuracy_pp": 3.0161943319838014,
+          "delta_macro_f1_pp": 3.0378920513644325
+        },
+        "60": {
+          "accuracy": 0.7269215128100854,
+          "macro_f1": 0.6672186295751876,
+          "delta_accuracy_pp": 1.138674257828387,
+          "delta_macro_f1_pp": 2.987253626995101
+        }
+      }
+    },
+    {
+      "id": "A3",
+      "name": "A2 + 观测丢弃训练",
+      "relation_encoder": true,
+      "observation_drop": true,
+      "consistency": false,
+      "validation_fusion": true,
+      "rates": {
+        "30": {
+          "accuracy": 0.7706477732793522,
+          "macro_f1": 0.7131518634428077,
+          "delta_accuracy_pp": 4.170040485829951,
+          "delta_macro_f1_pp": 4.049484015553317
+        },
+        "60": {
+          "accuracy": 0.7242781618544124,
+          "macro_f1": 0.6622222670402764,
+          "delta_accuracy_pp": 0.8743391622610841,
+          "delta_macro_f1_pp": 2.487617373503981
+        }
+      }
+    },
+    {
+      "id": "A4",
+      "name": "完整 V74（A3 + 一致性约束）",
+      "relation_encoder": true,
+      "observation_drop": true,
+      "consistency": true,
+      "validation_fusion": true,
+      "rates": {
+        "30": {
+          "accuracy": 0.7657894736842106,
+          "macro_f1": 0.7074294823454901,
+          "delta_accuracy_pp": 3.68421052631579,
+          "delta_macro_f1_pp": 3.4772459058215577
+        },
+        "60": {
+          "accuracy": 0.7242781618544124,
+          "macro_f1": 0.6637973333665913,
+          "delta_accuracy_pp": 0.8743391622610841,
+          "delta_macro_f1_pp": 2.6451240061354686
+        }
+      }
+    }
+  ],
+  "artifacts": {
+    "relation_fusion": "reports/experiments/geolife_v74_ablation_relation_fusion.json",
+    "drop_no_consistency": "reports/experiments/geolife_v74_ablation_drop_no_consistency.json",
+    "full": "reports/experiments/geolife_v74_five_rate_multiseed.json"
+  }
+}

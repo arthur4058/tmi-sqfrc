@@ -292,7 +292,13 @@ def choose_fusion(base_probability, expert_probability, labels):
 
 
 def train_one(rate: int, seed: int, args):
-    output = ROOT / f"experiments/geolife_v74_generalized_{rate}s_seed{seed}"
+    output_tag = getattr(args, "output_tag", None)
+    if output_tag:
+        output = ROOT / (
+            f"experiments/geolife_v74_ablation_{output_tag}_{rate}s_seed{seed}"
+        )
+    else:
+        output = ROOT / f"experiments/geolife_v74_generalized_{rate}s_seed{seed}"
     result_path = output / "result.json"
     if args.skip_existing and result_path.exists():
         print(f"SKIP existing {result_path}", flush=True)
@@ -412,6 +418,7 @@ def train_one(rate: int, seed: int, args):
 
     result = {
         "protocol": "geolife-v74-rate-generalized-current-segment-v1",
+        "variant": output_tag or "full",
         "rate_seconds": rate,
         "seed": seed,
         "anchors": anchor_count(rate),
@@ -478,6 +485,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--five-rate", action="store_true")
     parser.add_argument("--multiseed", action="store_true")
+    parser.add_argument(
+        "--ablation-rates", action="store_true",
+        help="run the representative 30-second and 60-second rates",
+    )
     parser.add_argument("--rate", type=int, choices=RATES)
     parser.add_argument("--seed", type=int, default=10086)
     parser.add_argument("--width", type=int, default=96)
@@ -491,16 +502,30 @@ def main():
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--skip-existing", action="store_true")
+    parser.add_argument(
+        "--output-tag",
+        help="isolate an ablation variant from full V74 artifacts",
+    )
     args = parser.parse_args()
     os.chdir(ROOT)
     if args.rate is not None:
         grid = [(args.rate, args.seed)]
     else:
         grid = experiment_grid(args.five_rate, args.multiseed)
+        if args.ablation_rates:
+            grid.extend((rate, args.seed) for rate in (30, 60))
+        grid = list(dict.fromkeys(grid))
     if not grid:
-        parser.error("select --rate or at least one of --five-rate/--multiseed")
+        parser.error(
+            "select --rate or at least one of --five-rate/--multiseed/--ablation-rates"
+        )
     results = [train_one(rate, seed, args) for rate, seed in grid]
-    summary = ROOT / "reports/experiments/geolife_v74_five_rate_multiseed.json"
+    if args.output_tag:
+        summary = ROOT / (
+            f"reports/experiments/geolife_v74_ablation_{args.output_tag}.json"
+        )
+    else:
+        summary = ROOT / "reports/experiments/geolife_v74_five_rate_multiseed.json"
     summary.parent.mkdir(parents=True, exist_ok=True)
     summary.write_text(
         json.dumps({"results": results}, ensure_ascii=False, indent=2) + "\n",
