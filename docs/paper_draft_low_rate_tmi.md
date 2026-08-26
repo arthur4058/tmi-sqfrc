@@ -1,15 +1,15 @@
 # 面向低采样率GPS轨迹的真实观测关系增强与互补融合交通方式识别
 
-> **论文初稿 v0.3（内部工作稿，2026-08-26）**
+> **论文初稿 v0.4（内部工作稿，2026-08-26）**
 > 英文暂定题目：*Travel Mode Identification from Low-Rate GPS Trajectories via Real-Observation Relational Encoding and Complementary Fusion*
 > 方法暂定名称：SORF-TMI（Sparse-Observation Relational Fusion for Travel Mode Identification）
-> 本稿已经填入五档主实验、30/60秒三种子实验、消融实验和统一协议代表性方法对比的真实结果，并补充数据协议、总体框架、关系编码、主结果和消融结果矢量图。所有标有“【待补】”的内容均不得在实验完成前改写为确定结论。
+> 本稿已经填入五档主实验、30/60秒三种子实验、消融实验、统一协议代表性方法对比、复杂度实验和混淆矩阵审计的真实结果，并补充完整矢量图。所有标有“【待补】”的内容均不得在对应事项完成前改写为确定结论。
 
 ## 投稿前待补清单（不进入论文正文）
 
 - 【已完成】在相同用户划分、五档采样数据和评价脚本下完成Takahashi GPS-only RF、XGBoost、Dabiri CNN、DeepInsight-ViT和MASO-MSF公平对比。
 - 【已完成】在相同RTX 5070和batch size下统计B0、关系专家与SORF-TMI的参数量、FLOPs、推理时间和峰值显存。
-- 【待补-建议】如最终需要逐类别误分类去向，再导出30秒、60秒混淆矩阵；当前已用类别F1对比图完成类别级分析。
+- 【已完成】从正式checkpoint和验证集融合参数重新推理30秒、60秒测试集，生成原始计数、行归一化混淆矩阵及SORF-TMI相对B0的变化图；重算指标与主实验完全一致。
 - 【待补-建议】根据最终投稿期刊或学校模板调整篇幅、图表编号、参考文献格式和中英文摘要。
 - 【已完成】数据构造协议图、整体框架图、真实观测关系编码器图、五档主结果图和消融结果图均已生成SVG矢量版本。
 - 【待补-可选】在更多随机种子下做配对显著性检验；目前每个重点档位仅有3个种子，不使用“统计显著”措辞。
@@ -21,7 +21,7 @@
 
 基于全球定位系统（Global Positioning System，GPS）轨迹的交通方式识别能够为居民出行调查、城市交通规划和移动服务提供低成本的数据支持。然而，移动设备为降低定位能耗而延长采样间隔后，固定时间窗口内的真实观测点数量显著减少，速度、加速度和方向变化等运动特征的估计也随之变得不稳定，导致传统识别模型性能下降。针对这一问题，本文提出一种面向低采样率GPS轨迹的真实观测关系增强与互补融合方法SORF-TMI。该方法保留原噪声鲁棒双分支Transformer作为基础模型，同时构建稀疏观测关系专家：首先从固定物理时间窗口中选择覆盖全程的真实GPS观测，不进行坐标插值；随后联合编码单点属性、任意两点之间的差分关系、相对时间间隔和轨迹级统计量，以补充低采样条件下局部序列信息的不足。训练阶段进一步引入观测丢弃增强及预测—表征一致性约束，使关系专家适应点数减少造成的输入扰动；推理阶段仅利用验证集选择温度和融合权重，将关系专家与原双分支模型进行保守概率融合。
 
-本文在Microsoft Research GeoLife 1.3公开数据集上构建5、10、20、30和60秒五档固定采样视图。所有视图采用等物理时间分箱并保留每个非空分箱中的第一个真实观测点，使用300秒窗口和150秒步长，并在生成窗口前实施用户互斥的训练、验证和测试划分。实验结果表明，SORF-TMI在五档采样间隔上均优于匹配训练的双分支基线，Accuracy和Macro-F1平均分别提高3.53和3.99个百分点。在论文重点关注的30秒条件下，三个随机种子的Accuracy由71.22%±1.60%提高至75.90%±0.77%，Macro-F1由66.02%±1.24%提高至70.30%±0.59%；在60秒条件下，两项指标分别由68.55%±3.50%和61.80%±2.38%提高至70.79%±1.64%和64.86%±1.49%。消融实验显示，真实观测关系专家与双分支模型的互补融合是主要增益来源；观测丢弃增强更适合中等稀疏条件，而一致性约束主要改善极稀疏条件下的类别均衡表现。上述结果说明，在不生成虚假插值坐标的前提下，显式建模稀疏真实观测之间的关系能够缓解低采样率造成的识别性能退化。
+本文在Microsoft Research GeoLife 1.3公开数据集上构建5、10、20、30和60秒五档固定采样视图。所有视图采用等物理时间分箱并保留每个非空分箱中的第一个真实观测点，使用300秒窗口和150秒步长，并在生成窗口前实施用户互斥的训练、验证和测试划分。实验结果表明，SORF-TMI在五档采样间隔上均优于匹配训练的双分支基线，Accuracy和Macro-F1平均分别提高3.53和3.99个百分点。在论文重点关注的30秒条件下，三个随机种子的Accuracy由71.22%±1.60%提高至75.90%±0.77%，Macro-F1由66.02%±1.24%提高至70.30%±0.59%；在60秒条件下，两项指标分别由68.55%±3.50%和61.80%±2.38%提高至70.79%±1.64%和64.86%±1.49%。消融实验显示，真实观测关系专家与双分支模型的互补融合是主要增益来源；混淆矩阵进一步表明，60秒下Train的召回率提高20.12个百分点，其被误判为Car的比例下降20.12个百分点。上述结果说明，在不生成虚假插值坐标的前提下，显式建模稀疏真实观测之间的关系能够缓解低采样率造成的识别性能退化。
 
 **关键词：** 交通方式识别；低采样率GPS；稀疏轨迹；关系编码；Transformer；多模型融合
 
@@ -29,7 +29,7 @@
 
 GPS-based travel mode identification supports travel surveys, transportation planning, and context-aware mobility services. However, extending the positioning interval for energy-efficient sensing substantially reduces the number of real observations within a fixed physical-time window and destabilizes motion features such as velocity, acceleration, and heading change. This paper proposes SORF-TMI, a sparse-observation relational fusion framework for travel mode identification from low-rate GPS trajectories. SORF-TMI retains a noise-robust dual-branch Transformer as the base model and introduces a relational expert that explicitly models real observation points, pairwise differences, temporal gaps, and trajectory-level statistics without synthesizing interpolated coordinates. Observation-drop augmentation and prediction/representation consistency objectives are used during training. At inference, validation-calibrated probability fusion combines the complementary decisions of the base model and the relational expert.
 
-Five fixed-rate views with sampling intervals of 5, 10, 20, 30, and 60 seconds are constructed from the public GeoLife 1.3 dataset using equal-duration temporal episodes and the first real observation in each non-empty episode. User-disjoint training, validation, and test partitions are created before view generation. Across the five matched-rate experiments, SORF-TMI improves Accuracy and Macro-F1 by 3.53 and 3.99 percentage points on average, respectively. Over three random seeds, the method improves Accuracy/Macro-F1 from 71.22%/66.02% to 75.90%/70.30% at 30 seconds, and from 68.55%/61.80% to 70.79%/64.86% at 60 seconds. Ablation results indicate that complementary fusion is the primary source of improvement, while observation-drop augmentation and consistency regularization have sampling-rate-dependent effects. These findings demonstrate the value of explicitly modeling relations among sparse real observations for low-rate GPS travel mode identification.
+Five fixed-rate views with sampling intervals of 5, 10, 20, 30, and 60 seconds are constructed from the public GeoLife 1.3 dataset using equal-duration temporal episodes and the first real observation in each non-empty episode. User-disjoint training, validation, and test partitions are created before view generation. Across the five matched-rate experiments, SORF-TMI improves Accuracy and Macro-F1 by 3.53 and 3.99 percentage points on average, respectively. Over three random seeds, the method improves Accuracy/Macro-F1 from 71.22%/66.02% to 75.90%/70.30% at 30 seconds, and from 68.55%/61.80% to 70.79%/64.86% at 60 seconds. Ablation results indicate that complementary fusion is the primary source of improvement. Confusion-matrix analysis further shows that at 60 seconds, Train recall increases by 20.12 percentage points while the Train-to-Car error decreases by the same amount. These findings demonstrate the value of explicitly modeling relations among sparse real observations for low-rate GPS travel mode identification.
 
 **Keywords:** travel mode identification; low-rate GPS; sparse trajectory; relational encoding; Transformer; complementary fusion
 
@@ -409,7 +409,8 @@ Takahashi方法原文包含GIS相关特征，本文为保持GPS-only边界只复
 
 | Seed | B0 Acc. | SORF-TMI Acc. | ΔAcc. | B0 Macro-F1 | SORF-TMI Macro-F1 | ΔF1 |
 |---:|---:|---:|---:|---:|---:|---:|
-| 42 | 71.07 | **76.05** | **+4.98** | 66.00 | **70.53** | **+4.53** || 2024 | 69.70 | **75.06** | **+5.36** | 64.79 | **69.63** | **+4.84** |
+| 42 | 71.07 | **76.05** | **+4.98** | 66.00 | **70.53** | **+4.53** |
+| 2024 | 69.70 | **75.06** | **+5.36** | 64.79 | **69.63** | **+4.84** |
 | 10086 | 72.89 | **76.58** | **+3.68** | 67.27 | **70.74** | **+3.48** |
 | 均值±标准差 | 71.22±1.60 | **75.90±0.77** | **+4.68±0.88** | 66.02±1.24 | **70.30±0.59** | **+4.28±0.71** |
 
@@ -443,7 +444,21 @@ Takahashi方法原文包含GIS相关特征，本文为保持GPS-only边界只复
 
 30秒条件下五个类别F1均提高，其中Train、Car和Bus提升更明显。60秒条件下Car基本持平，其余类别提高，Train F1由39.55%提高至48.54%，是Macro-F1提升的主要来源。这与低采样轨迹中公共交通类别的启停和速度变化被弱化有关：关系专家通过长跨度位移、全点对差分和整体统计量补充了局部特征缺失。
 
-类别级结果还揭示了Accuracy与Macro-F1必须同时报告的原因。60秒下Car F1几乎不变，但Train提升8.99个百分点；若只观察总体Accuracy，这种少数类别改善会被Car等大类样本数量稀释。相反，Macro-F1对每类赋予相同权重，更能反映关系专家是否真正改善类别均衡表现。本文暂不根据F1反推具体混淆去向；如投稿阶段需要讨论“Train主要被错分为何类”，应从保存的逐样本预测重新计算混淆矩阵，而不是凭类别F1推测。
+类别级结果还揭示了Accuracy与Macro-F1必须同时报告的原因。60秒下Car F1几乎不变，但Train提升8.99个百分点；若只观察总体Accuracy，这种少数类别改善会被Car等大类样本数量稀释。相反，Macro-F1对每类赋予相同权重，更能反映关系专家是否真正改善类别均衡表现。
+
+为核查具体误分类去向，本文使用正式checkpoint、验证集温度和融合权重重新推理seed10086的30秒与60秒测试集。重算的Accuracy、Macro-F1和类别F1与表5、表8完全一致，且B0与关系专家的样本标签逐项相同。图5给出按真实类别行归一化的混淆矩阵，图6给出SORF-TMI相对B0的百分点变化；正值表示相应预测去向增加，负值表示减少。
+
+![图5 30秒与60秒B0和SORF-TMI混淆矩阵](figures/fig5_confusion_matrices.svg)
+
+**图5 30秒与60秒的行归一化混淆矩阵（seed=10086）。** 每一行表示真实类别，每一列表示预测类别，单元格为该真实类别样本的百分比。
+
+![图6 SORF-TMI相对B0的混淆比例变化](figures/fig6_confusion_delta.svg)
+
+**图6 SORF-TMI相对B0的行归一化混淆比例变化（百分点）。** 对角线正值表示类别召回率提高，非对角线负值表示相应误分类减少。
+
+30秒下，SORF-TMI将Car召回率由65.43%提高至72.17%，提升6.75个百分点；其中Car误判为Bus的比例由18.95%降至14.78%，误判为Train的比例由10.62%降至8.53%。Bike召回率提高2.62个百分点，Walk、Bus和Train的召回率也分别提高1.53、0.47和2.05个百分点。因此，30秒的总体增益主要来自Car错误向Bus和Train的减少，同时五类召回率均未下降。
+
+60秒下，最显著变化来自Train：其召回率由31.36%提高至51.48%，提升20.12个百分点，而Train误判为Car的比例恰好由35.50%降至15.38%。这与关系专家利用全程长跨度位移、方向和速度关系的设计动机一致。与此同时，Bike与Car召回率分别下降3.68和2.03个百分点，Car误判为Train的比例增加5.21个百分点。这解释了为什么60秒Macro-F1提升2.65个百分点而Accuracy仅提升0.87个百分点：模型明显恢复了最困难的Train类别，但在Bike和Car上存在可量化的类别间权衡。该结果既支持方法机制，也限定了结论边界——SORF-TMI改善的是极稀疏条件下的类别均衡表现，并非使每个类别、每种错误都同时减少。
 
 ### 6.4 消融实验
 
@@ -461,15 +476,15 @@ Takahashi方法原文包含GIS相关特征，本文为保持GPS-only边界只复
 
 A1在60秒低于B0，表明关系专家不能独立替代双分支基础模型；A2融合后两档均明显超过B0，证明两类表示具有互补性，验证集融合是主要增益来源。A3在30秒取得单种子消融中的最高结果，但60秒略有下降，说明对仅含约5个点的轨迹继续移除观测可能造成过度信息损失。加入一致性约束后，60秒Macro-F1由66.22%回升至66.38%，Accuracy不变，但30秒有所回落。因而本文不声称每个模块在所有采样率上都单调增益，而将其解释为采样稀疏程度相关的作用差异。
 
-![图5 30秒与60秒消融结果](figures/fig5_ablation.svg)
+![图7 30秒与60秒消融结果](figures/fig7_ablation.svg)
 
-**图5 30秒与60秒的Macro-F1消融结果。** A1关系专家单独使用不稳定，A2互补融合形成主要增益；A3和A4表明观测丢弃与一致性约束的作用取决于剩余观测密度。
+**图7 30秒与60秒的Macro-F1消融结果。** A1关系专家单独使用不稳定，A2互补融合形成主要增益；A3和A4表明观测丢弃与一致性约束的作用取决于剩余观测密度。
 
 ### 6.5 增益来源与失败情形分析
 
 主结果和消融结果共同支持三个判断。第一，性能提升不能简单归因于“增加了一个更强分类器”。A1在60秒低于B0，但A2融合超过二者，说明增益来自错误互补：B0在空间路径或局部运动证据可靠时提供稳定判断，关系专家在长跨度关系更有辨识度时修正部分样本。第二，低采样并不意味着增强越强越好。60秒窗口通常只有5–6个点，继续丢弃一个内部点会移除约17%–20%的观测，影响显著大于30秒窗口，因此固定丢弃强度存在上限。第三，一致性正则更接近稳定器而非独立增益模块；它约束丢点前后的表示和输出，但当增强视图损失关键信息时，过强一致性也可能迫使模型拟合不合理目标。
 
-从类别表现看，SORF-TMI对Train的帮助大于Car。轨道交通在稀疏窗口中可能缺少站点启停细节，而较长跨度的方向稳定性、速度区间和位移关系仍可被点对表示捕捉；Car类别本身在B0下已经较高，60秒时可提升空间更小。Bus在30秒和60秒均有改善但幅度有限，提示仅依靠GPS运动关系仍难完全区分道路上的公交和小汽车。该问题可能需要地图匹配、站点或道路语义，但引入这些信息会改变本文GPS-only边界。
+从类别表现看，SORF-TMI对Train的帮助大于Car。混淆矩阵表明，60秒下Train到Car的误判减少20.12个百分点，是Train召回率提升的直接来源。轨道交通在稀疏窗口中可能缺少站点启停细节，而较长跨度的方向稳定性、速度区间和位移关系仍可被点对表示捕捉。另一方面，Car到Train的误判增加5.21个百分点，说明两类高速机动方式的边界尚未被完全解决。Bus在30秒和60秒均有改善但幅度有限，提示仅依靠GPS运动关系仍难完全区分道路上的公交和小汽车。该问题可能需要地图匹配、站点或道路语义，但引入这些信息会改变本文GPS-only边界。
 
 本文还记录两类失败情形。其一，关系专家在极稀疏窗口单独使用时容易受单个异常定位点支配，因此必须保留B0并限制融合权重；其二，使用同一增强概率覆盖五档采样率不是最优选择。上述失败并未从结果中删除，而是通过消融明确呈现，可为后续采样密度自适应正则提供依据。
 
@@ -537,7 +552,7 @@ SORF-TMI的参数量是两个专家之和，相比B0增加61.3%；60秒前向FLO
 
 **外部有效性。** GeoLife主要来自北京地区且采集年代较早，道路、设备和用户分布与其他城市可能不同。用户互斥能够检验跨用户泛化，但不能替代跨城市、跨设备和跨年份验证。
 
-**结论有效性。** 五档主结果和代表性方法比较只有一个统一种子，重点30秒和60秒各有三个种子。当前结果足以说明预定实验中提升方向一致，但不足以支持强统计显著性或跨数据集“普遍最优”的表述。复杂度实验尚待完成，因此论文结论必须维持在已验证边界内。
+**结论有效性。** 五档主结果和代表性方法比较只有一个统一种子，重点30秒和60秒各有三个种子。当前结果足以说明预定实验中提升方向一致，但不足以支持强统计显著性或跨数据集“普遍最优”的表述。混淆矩阵和复杂度实验均使用正式checkpoint完成审计，因此类别机制与部署开销结论仅适用于本文硬件、数据协议和已测档位。
 
 ### 7.6 局限性
 
@@ -552,7 +567,7 @@ SORF-TMI的参数量是两个专家之和，相比B0增加61.3%；60秒前向FLO
 
 本文研究低采样率GPS轨迹中的交通方式识别问题，提出真实观测关系增强与互补融合方法SORF-TMI。该方法保留轨迹—运动特征双分支基础模型，通过点token、全点对关系token、轨迹级统计和观测质量描述显式编码少量真实GPS点之间的长跨度关系；训练阶段使用观测丢弃和一致性约束，推理阶段使用验证集校准的保守概率融合。基于GeoLife构建的用户互斥五档采样实验表明，SORF-TMI在5–60秒五档上均优于B0，Accuracy和Macro-F1平均分别提高3.53和3.99个百分点。30秒和60秒的三随机种子实验均保持正向增益，消融实验确认融合互补信息是主要贡献，同时揭示了观测丢弃和一致性正则的采样率依赖性。
 
-后续工作将补充混淆矩阵，并进一步研究根据实际观测密度自适应调整增强与一致性强度，以及跨数据集、跨城市和未见采样率的泛化能力。
+后续工作将进一步研究根据实际观测密度自适应调整增强与一致性强度，缓解60秒下Bike与Car的类别权衡，并验证跨数据集、跨城市和未见采样率的泛化能力。
 
 本文最重要的实验结论不是“恢复了所有因低采样丢失的信息”，而是证明在不引入外部传感器、不生成插值坐标的严格GPS-only条件下，真实观测间的显式关系能够作为已有双分支表示的有效补充。该结论在五档单种子、30/60秒多种子和模块消融三个层次上相互印证，同时也保留了60秒Accuracy增益有限及增强强度非单调等真实边界。
 
@@ -604,14 +619,18 @@ GeoLife GPS Trajectories 1.3由Microsoft Research公开。本文代码、数据�
 
 ## 附录A 实验可追溯信息（投稿时可移至补充材料）
 
-- 当前消融分支：`exp/v74-ablation-30s-60s`
-- 当前消融提交：`305746b`
+- 当前汇总分支：`exp/fair-representative-comparison`
 - 五档与多种子报告：`reports/experiments/geolife_v74_five_rate_multiseed.md`
 - 消融报告：`reports/experiments/geolife_v74_ablation_30s_60s.md`
+- 代表性方法公平对比报告：`reports/experiments/fair_representative_comparison_seed10086.md`
+- 复杂度报告：`reports/experiments/sorf_tmi_model_complexity_seed10086.md`
+- 混淆矩阵报告：`reports/experiments/sorf_tmi_confusion_30s_60s_seed10086.md`
 - 五档数据清单：`reports/manifests/geolife_five_rate_seed42.json`
 - 五档数据验证：`reports/manifests/geolife_five_rate_validation.json`
 - 特征验证：`reports/manifests/geolife_five_rate_features_validation.json`
 - 统一训练入口：`scripts/run_v74_five_rate_multiseed.py`
+- 复杂度测量入口：`scripts/measure_sorf_complexity.py`
+- 混淆矩阵生成入口：`scripts/generate_sorf_confusion_matrices.py`
 - 数据生成入口：`scripts/generate_five_rate_matched_dataset.sh`
 
 ## 附录B 初稿数据使用边界
@@ -619,7 +638,7 @@ GeoLife GPS Trajectories 1.3由Microsoft Research公开。本文代码、数据�
 1. 上游轨迹级随机划分下的83.95% Accuracy只用于证明原作者代码可复现，不属于本文用户互斥五档协议，不进入主结果表。
 2. 早期“5秒训练、跨视图测试”的退化实验用于问题诊断，不与五档“同档训练、同档测试”主结果混合。
 3. 历史V74版本曾依赖60秒单种子的缓存专家；本文只采用能够在五档和多种子独立复现的统一关系专家版本。
-4. 当前表5-表10均来自已保存并审计通过的机器可读结果；表11仍为明确占位。
+4. 当前表5-表11及图4-图7均来自已保存并审计通过的机器可读结果或对应生成脚本，不含手工改写的实验数值。
 
 ## 附录C 关键实现参数
 
