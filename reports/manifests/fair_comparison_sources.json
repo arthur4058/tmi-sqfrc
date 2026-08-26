@@ -1,0 +1,28 @@
+{
+  "takahashi_rf": {
+    "reference": "Takahashi and Fujii, Journal of Information Processing 34 (2026) 309-320",
+    "doi": "10.2197/ipsjjip.34.309",
+    "implementation": "controlled GPS-only reimplementation; GIS/POI excluded"
+  },
+  "xgboost": {
+    "reference": "XGBoost 2.1.4",
+    "implementation": "official Python package, pinned in requirements"
+  },
+  "dabiri_cnn": {
+    "reference": "Dabiri and Heaslip, Transportation Research Part C 86 (2018) 360-371",
+    "doi": "10.1016/j.trc.2017.10.021",
+    "implementation": "controlled PyTorch reimplementation of the four-channel 1-D CNN input design"
+  },
+  "deepinsight_vit": {
+    "reference": "Ribeiro, Trifan and Neves, International Journal of Data Science and Analytics 20 (2025) 1023-1032",
+    "doi": "10.1007/s41060-024-00510-3",
+    "implementation": "controlled training-only DeepInsight-style feature mapping and ViT reimplementation"
+  },
+  "maso_msf": {
+    "reference": "Ma et al., Transportation Research Part C 151 (2023) 104088",
+    "doi": "10.1016/j.trc.2023.104088",
+    "official_repository": "https://github.com/MYL23/MASO-MSF",
+    "official_commit": "b3c01610456a09ca16311c325938184e7d698cb3",
+    "implementation": "official channel/scale-fusion design adapted to the shared temporal motion tensor; original random split is excluded"
+  }
+}

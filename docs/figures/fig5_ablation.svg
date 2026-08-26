@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="850" viewBox="0 0 1600 850">
+  <style>.h{font:700 28px 'Microsoft YaHei',sans-serif;fill:#0f172a}.t{font:600 18px 'Microsoft YaHei',sans-serif;fill:#1e293b}.s{font:400 15px 'Microsoft YaHei',sans-serif;fill:#475569}.axis{stroke:#64748b;stroke-width:2}.grid{stroke:#e2e8f0;stroke-width:1}.bar1{fill:#94a3b8}.bar2{fill:#f97316}</style>
+  <rect width="1600" height="850" fill="#fff"/><text x="800" y="45" text-anchor="middle" class="h">30秒与60秒条件下的消融结果（seed 10086）</text>
+  <g transform="translate(120,120)">
+    <text x="315" y="0" text-anchor="middle" class="t">(a) 30秒 Macro-F1 (%)</text>
+    <line x1="90" y1="540" x2="650" y2="540" class="axis"/><line x1="90" y1="50" x2="90" y2="540" class="axis"/>
+    <g class="grid"><line x1="90" y1="540" x2="650" y2="540"/><line x1="90" y1="376.7" x2="650" y2="376.7"/><line x1="90" y1="213.3" x2="650" y2="213.3"/><line x1="90" y1="50" x2="650" y2="50"/></g>
+    <g class="s" text-anchor="end"><text x="78" y="545">64</text><text x="78" y="382">67</text><text x="78" y="218">70</text><text x="78" y="55">73</text></g>
+    <g><rect x="115" y="362" width="70" height="178" class="bar1"/><rect x="220" y="358" width="70" height="182" class="bar1"/><rect x="325" y="197" width="70" height="343" class="bar2"/><rect x="430" y="142" width="70" height="398" class="bar2"/><rect x="535" y="173" width="70" height="367" class="bar2"/></g>
+    <g class="s" text-anchor="middle"><text x="150" y="350">67.27</text><text x="255" y="346">67.33</text><text x="360" y="185">70.30</text><text x="465" y="130">71.32</text><text x="570" y="161">70.74</text><text x="150" y="570">B0</text><text x="255" y="570">A1</text><text x="360" y="570">A2</text><text x="465" y="570">A3</text><text x="570" y="570">A4</text></g>
+  </g>
+  <g transform="translate(830,120)">
+    <text x="315" y="0" text-anchor="middle" class="t">(b) 60秒 Macro-F1 (%)</text>
+    <line x1="90" y1="540" x2="650" y2="540" class="axis"/><line x1="90" y1="50" x2="90" y2="540" class="axis"/>
+    <g class="grid"><line x1="90" y1="540" x2="650" y2="540"/><line x1="90" y1="417.5" x2="650" y2="417.5"/><line x1="90" y1="295" x2="650" y2="295"/><line x1="90" y1="172.5" x2="650" y2="172.5"/><line x1="90" y1="50" x2="650" y2="50"/></g>
+    <g class="s" text-anchor="end"><text x="78" y="545">60</text><text x="78" y="423">62</text><text x="78" y="300">64</text><text x="78" y="178">66</text><text x="78" y="55">68</text></g>
+    <g><rect x="115" y="311" width="70" height="229" class="bar1"/><rect x="220" y="418" width="70" height="122" class="bar1"/><rect x="325" y="128" width="70" height="412" class="bar2"/><rect x="430" y="159" width="70" height="381" class="bar2"/><rect x="535" y="149" width="70" height="391" class="bar2"/></g>
+    <g class="s" text-anchor="middle"><text x="150" y="299">63.73</text><text x="255" y="406">61.99</text><text x="360" y="116">66.72</text><text x="465" y="147">66.22</text><text x="570" y="137">66.38</text><text x="150" y="570">B0</text><text x="255" y="570">A1</text><text x="360" y="570">A2</text><text x="465" y="570">A3</text><text x="570" y="570">A4</text></g>
+  </g>
+  <g transform="translate(290,735)" class="s"><text x="0" y="0"><tspan font-weight="600">B0</tspan> 基础模型</text><text x="190" y="0"><tspan font-weight="600">A1</tspan> 关系专家</text><text x="380" y="0"><tspan font-weight="600">A2</tspan> A1+B0融合</text><text x="610" y="0"><tspan font-weight="600">A3</tspan> A2+观测丢弃</text><text x="855" y="0"><tspan font-weight="600">A4</tspan> A3+一致性（完整模型）</text></g>
+  <text x="800" y="805" text-anchor="middle" class="s">关系专家单独使用并不稳定；与B0互补融合后形成主要增益，增强与一致性的贡献随稀疏程度变化</text>
+</svg>

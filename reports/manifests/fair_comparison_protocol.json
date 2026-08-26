@@ -1,0 +1,272 @@
+{
+  "rates": {
+    "5": {
+      "train": {
+        "samples": 61142,
+        "users": 44,
+        "label_user_sha256": "4d46829181429433dd03b284380ca0dcdfec92488c7c9c9b8e81e9c61c43df36",
+        "class_counts": [
+          13068,
+          13084,
+          12853,
+          13097,
+          9040
+        ]
+      },
+      "val": {
+        "samples": 7043,
+        "users": 6,
+        "label_user_sha256": "88a01a12af1915cdda623b19fb4068a049526dd6083e0b492233cd24a89d86a3",
+        "class_counts": [
+          2739,
+          901,
+          2020,
+          1159,
+          224
+        ]
+      },
+      "test": {
+        "samples": 4932,
+        "users": 12,
+        "label_user_sha256": "6779e1f0686d4e7a0896080e88c806b23fe98ba0364febd32f9143e317d8d366",
+        "class_counts": [
+          1370,
+          573,
+          640,
+          2016,
+          333
+        ]
+      }
+    },
+    "10": {
+      "train": {
+        "samples": 63618,
+        "users": 44,
+        "label_user_sha256": "f86112483eb12e07d1ccdd36843424d8669b9e9ac98458bb1b20f14ef35085db",
+        "class_counts": [
+          13059,
+          13085,
+          13011,
+          13095,
+          11368
+        ]
+      },
+      "val": {
+        "samples": 7212,
+        "users": 6,
+        "label_user_sha256": "3562465617bbf6f8dbe1cf41ef6870a0d17e5b3c1a32c61c6de1fcae8dbdd899",
+        "class_counts": [
+          2737,
+          901,
+          2079,
+          1159,
+          336
+        ]
+      },
+      "test": {
+        "samples": 4941,
+        "users": 12,
+        "label_user_sha256": "59c2c13a24fce42ebaa7a18acc28c5d09b0f92fa53f4ef7494ef187c187e2430",
+        "class_counts": [
+          1370,
+          573,
+          640,
+          2016,
+          342
+        ]
+      }
+    },
+    "20": {
+      "train": {
+        "samples": 64055,
+        "users": 44,
+        "label_user_sha256": "6abd09e37314380581936fe5af35e7cc690d8715a862a3683af6e51d1c25ff02",
+        "class_counts": [
+          13038,
+          13080,
+          13109,
+          13095,
+          11733
+        ]
+      },
+      "val": {
+        "samples": 7259,
+        "users": 6,
+        "label_user_sha256": "91c7df37f1b4e4e121a635bae6faad759be953fc6b714b64031fc8c770a2f536",
+        "class_counts": [
+          2734,
+          901,
+          2122,
+          1159,
+          343
+        ]
+      },
+      "test": {
+        "samples": 4940,
+        "users": 12,
+        "label_user_sha256": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+        "class_counts": [
+          1370,
+          572,
+          640,
+          2016,
+          342
+        ]
+      }
+    },
+    "30": {
+      "train": {
+        "samples": 63857,
+        "users": 44,
+        "label_user_sha256": "680cb45df6b52935ca4573d20492c5d51cefef00c74d303e75ae6122d5fc7869",
+        "class_counts": [
+          13002,
+          13081,
+          13108,
+          13095,
+          11571
+        ]
+      },
+      "val": {
+        "samples": 7236,
+        "users": 6,
+        "label_user_sha256": "24e3ee98fbb0e36ad5195360e104bf99cdd5e350579c0b87d6dcd62161869db5",
+        "class_counts": [
+          2734,
+          901,
+          2122,
+          1159,
+          320
+        ]
+      },
+      "test": {
+        "samples": 4940,
+        "users": 12,
+        "label_user_sha256": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+        "class_counts": [
+          1370,
+          572,
+          640,
+          2016,
+          342
+        ]
+      }
+    },
+    "60": {
+      "train": {
+        "samples": 62786,
+        "users": 44,
+        "label_user_sha256": "5865105ffe63a91448a7593d05d2587eb33642a2c8d09837757d5a77c468adec",
+        "class_counts": [
+          12749,
+          12983,
+          13074,
+          13058,
+          10922
+        ]
+      },
+      "val": {
+        "samples": 7129,
+        "users": 6,
+        "label_user_sha256": "ffcbe29868ff59437702f3dacd16f7a857ec07538faf6be42a71a386fe32179f",
+        "class_counts": [
+          2682,
+          899,
+          2122,
+          1158,
+          268
+        ]
+      },
+      "test": {
+        "samples": 4918,
+        "users": 12,
+        "label_user_sha256": "5853138a48e7165d2f43089c1aadc4800b2b4f776a1a53e7f6cd07a08fa0a61f",
+        "class_counts": [
+          1356,
+          571,
+          638,
+          2015,
+          338
+        ]
+      }
+    }
+  },
+  "class_names": [
+    "Walk",
+    "Bike",
+    "Bus",
+    "Car",
+    "Train"
+  ],
+  "user_partitions": {
+    "train": [
+      10,
+      21,
+      53,
+      56,
+      58,
+      60,
+      62,
+      64,
+      67,
+      68,
+      69,
+      73,
+      75,
+      76,
+      80,
+      81,
+      82,
+      84,
+      85,
+      86,
+      87,
+      91,
+      96,
+      97,
+      101,
+      104,
+      106,
+      110,
+      111,
+      112,
+      114,
+      117,
+      125,
+      128,
+      129,
+      136,
+      138,
+      139,
+      144,
+      153,
+      154,
+      161,
+      167,
+      174
+    ],
+    "val": [
+      52,
+      65,
+      89,
+      107,
+      126,
+      163
+    ],
+    "test": [
+      20,
+      78,
+      92,
+      98,
+      102,
+      105,
+      108,
+      115,
+      141,
+      170,
+      175,
+      179
+    ]
+  },
+  "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac"
+}

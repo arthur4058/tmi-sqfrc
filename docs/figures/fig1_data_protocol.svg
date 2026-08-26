@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="700" viewBox="0 0 1600 700">
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0 0L10 3L0 6Z" fill="#334155"/></marker><style>.h{font:700 27px 'Microsoft YaHei',sans-serif;fill:#0f172a}.t{font:600 19px 'Microsoft YaHei',sans-serif;fill:#1e293b}.s{font:400 16px 'Microsoft YaHei',sans-serif;fill:#475569}.b{stroke-width:2}.a{stroke:#334155;stroke-width:3;fill:none;marker-end:url(#a)}</style></defs>
+  <rect width="1600" height="700" fill="#fff"/><text x="800" y="45" text-anchor="middle" class="h">GeoLife低采样率数据构建与评测协议</text>
+  <g>
+    <rect x="35" y="100" width="240" height="460" rx="18" fill="#eff6ff" stroke="#3b82f6" class="b"/>
+    <text x="155" y="140" text-anchor="middle" class="t">GeoLife 1.3</text><text x="155" y="173" text-anchor="middle" class="s">带时间戳GPS点</text><text x="155" y="200" text-anchor="middle" class="s">用户ID + 交通方式标签</text>
+    <polyline points="60,370 90,310 120,345 150,250 185,290 220,205 250,265" fill="none" stroke="#2563eb" stroke-width="4"/>
+    <g fill="#2563eb"><circle cx="60" cy="370" r="6"/><circle cx="90" cy="310" r="6"/><circle cx="120" cy="345" r="6"/><circle cx="150" cy="250" r="6"/><circle cx="185" cy="290" r="6"/><circle cx="220" cy="205" r="6"/><circle cx="250" cy="265" r="6"/></g>
+    <text x="155" y="460" text-anchor="middle" class="s">182个用户目录</text><text x="155" y="492" text-anchor="middle" class="s">五类标签映射</text>
+  </g>
+  <path d="M275 330L345 330" class="a"/>
+  <rect x="345" y="100" width="260" height="460" rx="18" fill="#f0fdf4" stroke="#22c55e" class="b"/>
+  <text x="475" y="140" text-anchor="middle" class="t">先按用户互斥划分</text>
+  <rect x="385" y="205" width="180" height="75" rx="12" fill="#dcfce7"/><text x="475" y="238" text-anchor="middle" class="t">训练集</text><text x="475" y="264" text-anchor="middle" class="s">45用户</text>
+  <rect x="385" y="305" width="180" height="75" rx="12" fill="#dcfce7"/><text x="475" y="338" text-anchor="middle" class="t">验证集</text><text x="475" y="364" text-anchor="middle" class="s">6用户</text>
+  <rect x="385" y="405" width="180" height="75" rx="12" fill="#dcfce7"/><text x="475" y="438" text-anchor="middle" class="t">测试集</text><text x="475" y="464" text-anchor="middle" class="s">13用户</text>
+  <text x="475" y="520" text-anchor="middle" class="s">防止个体路径习惯泄漏</text>
+  <path d="M605 330L675 330" class="a"/>
+  <rect x="675" y="100" width="280" height="460" rx="18" fill="#fff7ed" stroke="#f97316" class="b"/>
+  <text x="815" y="140" text-anchor="middle" class="t">固定物理时间切窗</text><text x="815" y="175" text-anchor="middle" class="s">窗口300 s，步长150 s</text>
+  <line x1="715" y1="260" x2="915" y2="260" stroke="#ea580c" stroke-width="6"/>
+  <rect x="715" y="232" width="100" height="56" fill="#ffedd5" stroke="#fb923c"/><rect x="815" y="232" width="100" height="56" fill="#fed7aa" stroke="#fb923c"/>
+  <text x="765" y="267" text-anchor="middle" class="s">窗口1</text><text x="865" y="267" text-anchor="middle" class="s">重叠</text>
+  <line x1="750" y1="355" x2="915" y2="355" stroke="#fb923c" stroke-width="3"/>
+  <g fill="#f97316"><circle cx="750" cy="355" r="7"/><circle cx="780" cy="330" r="7"/><circle cx="815" cy="370" r="7"/><circle cx="850" cy="315" r="7"/><circle cx="885" cy="345" r="7"/><circle cx="915" cy="325" r="7"/></g>
+  <text x="815" y="430" text-anchor="middle" class="s">窗口语义保持一致</text><text x="815" y="460" text-anchor="middle" class="s">过滤跨方式与点数不足窗口</text>
+  <path d="M955 330L1025 330" class="a"/>
+  <rect x="1025" y="100" width="310" height="460" rx="18" fill="#faf5ff" stroke="#a855f7" class="b"/>
+  <text x="1180" y="140" text-anchor="middle" class="t">等时间分箱真实点采样</text><text x="1180" y="173" text-anchor="middle" class="s">每个非空分箱保留首个观测</text>
+  <g class="s" text-anchor="end"><text x="1090" y="230">5 s</text><text x="1090" y="285">10 s</text><text x="1090" y="340">20 s</text><text x="1090" y="395">30 s</text><text x="1090" y="450">60 s</text></g>
+  <g stroke="#c084fc" stroke-width="2"><line x1="1110" y1="225" x2="1290" y2="225"/><line x1="1110" y1="280" x2="1290" y2="280"/><line x1="1110" y1="335" x2="1290" y2="335"/><line x1="1110" y1="390" x2="1290" y2="390"/><line x1="1110" y1="445" x2="1290" y2="445"/></g>
+  <g fill="#9333ea"><circle cx="1120" cy="225" r="5"/><circle cx="1150" cy="225" r="5"/><circle cx="1180" cy="225" r="5"/><circle cx="1210" cy="225" r="5"/><circle cx="1240" cy="225" r="5"/><circle cx="1270" cy="225" r="5"/><circle cx="1120" cy="280" r="6"/><circle cx="1180" cy="280" r="6"/><circle cx="1240" cy="280" r="6"/><circle cx="1290" cy="280" r="6"/><circle cx="1120" cy="335" r="7"/><circle cx="1210" cy="335" r="7"/><circle cx="1290" cy="335" r="7"/><circle cx="1120" cy="390" r="8"/><circle cx="1240" cy="390" r="8"/><circle cx="1120" cy="445" r="9"/><circle cx="1290" cy="445" r="9"/></g>
+  <text x="1180" y="515" text-anchor="middle" class="s">无坐标插值；pair ID严格对齐</text>
+  <path d="M1335 330L1400 330" class="a"/>
+  <rect x="1400" y="165" width="165" height="330" rx="18" fill="#f8fafc" stroke="#64748b" class="b"/>
+  <text x="1482" y="210" text-anchor="middle" class="t">匹配评测</text><text x="1482" y="257" text-anchor="middle" class="s">5→5</text><text x="1482" y="297" text-anchor="middle" class="s">10→10</text><text x="1482" y="337" text-anchor="middle" class="s">20→20</text><text x="1482" y="377" text-anchor="middle" class="s">30→30</text><text x="1482" y="417" text-anchor="middle" class="s">60→60</text><text x="1482" y="462" text-anchor="middle" class="s">同档训练/测试</text>
+  <text x="800" y="630" text-anchor="middle" class="s">核心控制变量：用户身份、物理窗口和类别语义保持一致，仅改变GPS观测间隔与点密度</text>
+</svg>

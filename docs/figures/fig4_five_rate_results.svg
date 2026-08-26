@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="850" viewBox="0 0 1600 850">
+  <style>.h{font:700 28px 'Microsoft YaHei',sans-serif;fill:#0f172a}.t{font:600 18px 'Microsoft YaHei',sans-serif;fill:#1e293b}.s{font:400 15px 'Microsoft YaHei',sans-serif;fill:#475569}.axis{stroke:#64748b;stroke-width:2}.grid{stroke:#e2e8f0;stroke-width:1}.b0{stroke:#64748b;stroke-width:4;fill:none}.v{stroke:#ea580c;stroke-width:4;fill:none}.db{fill:#64748b}.dv{fill:#ea580c}</style>
+  <rect width="1600" height="850" fill="#fff"/><text x="800" y="45" text-anchor="middle" class="h">五档采样间隔下B0与SORF-TMI的测试性能（seed 10086）</text>
+  <g transform="translate(100,110)">
+    <text x="330" y="0" text-anchor="middle" class="t">(a) Accuracy (%)</text>
+    <line x1="70" y1="520" x2="650" y2="520" class="axis"/><line x1="70" y1="50" x2="70" y2="520" class="axis"/>
+    <g class="grid"><line x1="70" y1="520" x2="650" y2="520"/><line x1="70" y1="402.5" x2="650" y2="402.5"/><line x1="70" y1="285" x2="650" y2="285"/><line x1="70" y1="167.5" x2="650" y2="167.5"/><line x1="70" y1="50" x2="650" y2="50"/></g>
+    <g class="s" text-anchor="end"><text x="58" y="525">65</text><text x="58" y="407">70</text><text x="58" y="290">75</text><text x="58" y="172">80</text><text x="58" y="55">85</text></g>
+    <g class="s" text-anchor="middle"><text x="100" y="550">5</text><text x="235" y="550">10</text><text x="370" y="550">20</text><text x="505" y="550">30</text><text x="640" y="550">60</text><text x="355" y="590" class="t">采样间隔 (s)</text></g>
+    <text x="18" y="300" transform="rotate(-90 18 300)" text-anchor="middle" class="t">Accuracy (%)</text>
+    <polyline points="100,200 235,307 370,327 505,334 640,365" class="b0"/><polyline points="100,139 235,198 370,191 505,248 640,345" class="v"/>
+    <g class="db"><circle cx="100" cy="200" r="7"/><circle cx="235" cy="307" r="7"/><circle cx="370" cy="327" r="7"/><circle cx="505" cy="334" r="7"/><circle cx="640" cy="365" r="7"/></g>
+    <g class="dv"><rect x="93" y="132" width="14" height="14"/><rect x="228" y="191" width="14" height="14"/><rect x="363" y="184" width="14" height="14"/><rect x="498" y="241" width="14" height="14"/><rect x="633" y="338" width="14" height="14"/></g>
+    <g class="s" fill="#ea580c" text-anchor="middle"><text x="100" y="120">+2.62</text><text x="235" y="180">+4.65</text><text x="370" y="172">+5.85</text><text x="505" y="230">+3.68</text><text x="640" y="326">+0.87</text></g>
+  </g>
+  <g transform="translate(830,110)">
+    <text x="330" y="0" text-anchor="middle" class="t">(b) Macro-F1 (%)</text>
+    <line x1="70" y1="520" x2="650" y2="520" class="axis"/><line x1="70" y1="50" x2="70" y2="520" class="axis"/>
+    <g class="grid"><line x1="70" y1="520" x2="650" y2="520"/><line x1="70" y1="402.5" x2="650" y2="402.5"/><line x1="70" y1="285" x2="650" y2="285"/><line x1="70" y1="167.5" x2="650" y2="167.5"/><line x1="70" y1="50" x2="650" y2="50"/></g>
+    <g class="s" text-anchor="end"><text x="58" y="525">60</text><text x="58" y="407">65</text><text x="58" y="290">70</text><text x="58" y="172">75</text><text x="58" y="55">80</text></g>
+    <g class="s" text-anchor="middle"><text x="100" y="550">5</text><text x="235" y="550">10</text><text x="370" y="550">20</text><text x="505" y="550">30</text><text x="640" y="550">60</text><text x="355" y="590" class="t">采样间隔 (s)</text></g>
+    <text x="18" y="300" transform="rotate(-90 18 300)" text-anchor="middle" class="t">Macro-F1 (%)</text>
+    <polyline points="100,182 235,311 370,365 505,349 640,432" class="b0"/><polyline points="100,119 235,193 370,221 505,267 640,370" class="v"/>
+    <g class="db"><circle cx="100" cy="182" r="7"/><circle cx="235" cy="311" r="7"/><circle cx="370" cy="365" r="7"/><circle cx="505" cy="349" r="7"/><circle cx="640" cy="432" r="7"/></g>
+    <g class="dv"><rect x="93" y="112" width="14" height="14"/><rect x="228" y="186" width="14" height="14"/><rect x="363" y="214" width="14" height="14"/><rect x="498" y="260" width="14" height="14"/><rect x="633" y="363" width="14" height="14"/></g>
+    <g class="s" fill="#ea580c" text-anchor="middle"><text x="100" y="100">+2.68</text><text x="235" y="175">+5.00</text><text x="370" y="203">+6.15</text><text x="505" y="248">+3.48</text><text x="640" y="350">+2.65</text></g>
+  </g>
+  <g transform="translate(605,765)"><line x1="0" y1="0" x2="50" y2="0" class="b0"/><circle cx="25" cy="0" r="7" class="db"/><text x="65" y="6" class="t">B0</text><line x1="150" y1="0" x2="200" y2="0" class="v"/><rect x="168" y="-7" width="14" height="14" class="dv"/><text x="215" y="6" class="t">SORF-TMI</text></g>
+</svg>

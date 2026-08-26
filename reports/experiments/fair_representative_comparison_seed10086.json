@@ -1,0 +1,701 @@
+{
+  "protocol": {
+    "rates": {
+      "5": {
+        "train": {
+          "samples": 61142,
+          "users": 44,
+          "label_user_sha256": "4d46829181429433dd03b284380ca0dcdfec92488c7c9c9b8e81e9c61c43df36",
+          "class_counts": [
+            13068,
+            13084,
+            12853,
+            13097,
+            9040
+          ]
+        },
+        "val": {
+          "samples": 7043,
+          "users": 6,
+          "label_user_sha256": "88a01a12af1915cdda623b19fb4068a049526dd6083e0b492233cd24a89d86a3",
+          "class_counts": [
+            2739,
+            901,
+            2020,
+            1159,
+            224
+          ]
+        },
+        "test": {
+          "samples": 4932,
+          "users": 12,
+          "label_user_sha256": "6779e1f0686d4e7a0896080e88c806b23fe98ba0364febd32f9143e317d8d366",
+          "class_counts": [
+            1370,
+            573,
+            640,
+            2016,
+            333
+          ]
+        }
+      },
+      "10": {
+        "train": {
+          "samples": 63618,
+          "users": 44,
+          "label_user_sha256": "f86112483eb12e07d1ccdd36843424d8669b9e9ac98458bb1b20f14ef35085db",
+          "class_counts": [
+            13059,
+            13085,
+            13011,
+            13095,
+            11368
+          ]
+        },
+        "val": {
+          "samples": 7212,
+          "users": 6,
+          "label_user_sha256": "3562465617bbf6f8dbe1cf41ef6870a0d17e5b3c1a32c61c6de1fcae8dbdd899",
+          "class_counts": [
+            2737,
+            901,
+            2079,
+            1159,
+            336
+          ]
+        },
+        "test": {
+          "samples": 4941,
+          "users": 12,
+          "label_user_sha256": "59c2c13a24fce42ebaa7a18acc28c5d09b0f92fa53f4ef7494ef187c187e2430",
+          "class_counts": [
+            1370,
+            573,
+            640,
+            2016,
+            342
+          ]
+        }
+      },
+      "20": {
+        "train": {
+          "samples": 64055,
+          "users": 44,
+          "label_user_sha256": "6abd09e37314380581936fe5af35e7cc690d8715a862a3683af6e51d1c25ff02",
+          "class_counts": [
+            13038,
+            13080,
+            13109,
+            13095,
+            11733
+          ]
+        },
+        "val": {
+          "samples": 7259,
+          "users": 6,
+          "label_user_sha256": "91c7df37f1b4e4e121a635bae6faad759be953fc6b714b64031fc8c770a2f536",
+          "class_counts": [
+            2734,
+            901,
+            2122,
+            1159,
+            343
+          ]
+        },
+        "test": {
+          "samples": 4940,
+          "users": 12,
+          "label_user_sha256": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+          "class_counts": [
+            1370,
+            572,
+            640,
+            2016,
+            342
+          ]
+        }
+      },
+      "30": {
+        "train": {
+          "samples": 63857,
+          "users": 44,
+          "label_user_sha256": "680cb45df6b52935ca4573d20492c5d51cefef00c74d303e75ae6122d5fc7869",
+          "class_counts": [
+            13002,
+            13081,
+            13108,
+            13095,
+            11571
+          ]
+        },
+        "val": {
+          "samples": 7236,
+          "users": 6,
+          "label_user_sha256": "24e3ee98fbb0e36ad5195360e104bf99cdd5e350579c0b87d6dcd62161869db5",
+          "class_counts": [
+            2734,
+            901,
+            2122,
+            1159,
+            320
+          ]
+        },
+        "test": {
+          "samples": 4940,
+          "users": 12,
+          "label_user_sha256": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+          "class_counts": [
+            1370,
+            572,
+            640,
+            2016,
+            342
+          ]
+        }
+      },
+      "60": {
+        "train": {
+          "samples": 62786,
+          "users": 44,
+          "label_user_sha256": "5865105ffe63a91448a7593d05d2587eb33642a2c8d09837757d5a77c468adec",
+          "class_counts": [
+            12749,
+            12983,
+            13074,
+            13058,
+            10922
+          ]
+        },
+        "val": {
+          "samples": 7129,
+          "users": 6,
+          "label_user_sha256": "ffcbe29868ff59437702f3dacd16f7a857ec07538faf6be42a71a386fe32179f",
+          "class_counts": [
+            2682,
+            899,
+            2122,
+            1158,
+            268
+          ]
+        },
+        "test": {
+          "samples": 4918,
+          "users": 12,
+          "label_user_sha256": "5853138a48e7165d2f43089c1aadc4800b2b4f776a1a53e7f6cd07a08fa0a61f",
+          "class_counts": [
+            1356,
+            571,
+            638,
+            2015,
+            338
+          ]
+        }
+      }
+    },
+    "class_names": [
+      "Walk",
+      "Bike",
+      "Bus",
+      "Car",
+      "Train"
+    ],
+    "user_partitions": {
+      "train": [
+        10,
+        21,
+        53,
+        56,
+        58,
+        60,
+        62,
+        64,
+        67,
+        68,
+        69,
+        73,
+        75,
+        76,
+        80,
+        81,
+        82,
+        84,
+        85,
+        86,
+        87,
+        91,
+        96,
+        97,
+        101,
+        104,
+        106,
+        110,
+        111,
+        112,
+        114,
+        117,
+        125,
+        128,
+        129,
+        136,
+        138,
+        139,
+        144,
+        153,
+        154,
+        161,
+        167,
+        174
+      ],
+      "val": [
+        52,
+        65,
+        89,
+        107,
+        126,
+        163
+      ],
+      "test": [
+        20,
+        78,
+        92,
+        98,
+        102,
+        105,
+        108,
+        115,
+        141,
+        170,
+        175,
+        179
+      ]
+    },
+    "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac"
+  },
+  "results": [
+    {
+      "method": "takahashi_rf",
+      "rate_seconds": 5,
+      "seed": 10086,
+      "test_fingerprint": "6779e1f0686d4e7a0896080e88c806b23fe98ba0364febd32f9143e317d8d366",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 69.87943243980408,
+      "accuracy": 0.7881184103811841,
+      "macro_f1": 0.7437603203763837,
+      "per_class_f1": {
+        "Walk": 0.8901773533424284,
+        "Bike": 0.783960720130933,
+        "Bus": 0.6483023702754644,
+        "Car": 0.8025150042869391,
+        "Train": 0.5938461538461539
+      }
+    },
+    {
+      "method": "takahashi_rf",
+      "rate_seconds": 10,
+      "seed": 10086,
+      "test_fingerprint": "59c2c13a24fce42ebaa7a18acc28c5d09b0f92fa53f4ef7494ef187c187e2430",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 73.13278722763062,
+      "accuracy": 0.7759562841530054,
+      "macro_f1": 0.7260859039581542,
+      "per_class_f1": {
+        "Walk": 0.8812050667579596,
+        "Bike": 0.7609912070343724,
+        "Bus": 0.6630508474576271,
+        "Car": 0.7916666666666667,
+        "Train": 0.533515731874145
+      }
+    },
+    {
+      "method": "takahashi_rf",
+      "rate_seconds": 20,
+      "seed": 10086,
+      "test_fingerprint": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 71.7465250492096,
+      "accuracy": 0.7526315789473684,
+      "macro_f1": 0.702947335330872,
+      "per_class_f1": {
+        "Walk": 0.8767497439399112,
+        "Bike": 0.7531645569620253,
+        "Bus": 0.6458191706322229,
+        "Car": 0.7577456476836826,
+        "Train": 0.48125755743651755
+      }
+    },
+    {
+      "method": "takahashi_rf",
+      "rate_seconds": 30,
+      "seed": 10086,
+      "test_fingerprint": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 70.29980611801147,
+      "accuracy": 0.7437246963562752,
+      "macro_f1": 0.6943118678602851,
+      "per_class_f1": {
+        "Walk": 0.8665523156089193,
+        "Bike": 0.7355242566510172,
+        "Bus": 0.6245802552048355,
+        "Car": 0.7530173682661171,
+        "Train": 0.49188514357053686
+      }
+    },
+    {
+      "method": "takahashi_rf",
+      "rate_seconds": 60,
+      "seed": 10086,
+      "test_fingerprint": "5853138a48e7165d2f43089c1aadc4800b2b4f776a1a53e7f6cd07a08fa0a61f",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 69.27706956863403,
+      "accuracy": 0.689304595363969,
+      "macro_f1": 0.6441594611168228,
+      "per_class_f1": {
+        "Walk": 0.8558527266411949,
+        "Bike": 0.6809160305343511,
+        "Bus": 0.551290119572058,
+        "Car": 0.6733416770963705,
+        "Train": 0.4593967517401392
+      }
+    },
+    {
+      "method": "xgboost",
+      "rate_seconds": 5,
+      "seed": 10086,
+      "test_fingerprint": "6779e1f0686d4e7a0896080e88c806b23fe98ba0364febd32f9143e317d8d366",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 112.38674974441528,
+      "accuracy": 0.7964314679643146,
+      "macro_f1": 0.7535433757231825,
+      "per_class_f1": {
+        "Walk": 0.8990450204638472,
+        "Bike": 0.7999999999999998,
+        "Bus": 0.6321049344159899,
+        "Car": 0.8157669237360754,
+        "Train": 0.6208
+      }
+    },
+    {
+      "method": "xgboost",
+      "rate_seconds": 10,
+      "seed": 10086,
+      "test_fingerprint": "59c2c13a24fce42ebaa7a18acc28c5d09b0f92fa53f4ef7494ef187c187e2430",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 115.53161430358887,
+      "accuracy": 0.7785873304998988,
+      "macro_f1": 0.7351678610764081,
+      "per_class_f1": {
+        "Walk": 0.8790905959352393,
+        "Bike": 0.7828947368421052,
+        "Bus": 0.6293532338308457,
+        "Car": 0.799426111908178,
+        "Train": 0.5850746268656717
+      }
+    },
+    {
+      "method": "xgboost",
+      "rate_seconds": 20,
+      "seed": 10086,
+      "test_fingerprint": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 116.86670017242432,
+      "accuracy": 0.7597165991902834,
+      "macro_f1": 0.7170288476749268,
+      "per_class_f1": {
+        "Walk": 0.8760727772056299,
+        "Bike": 0.7811725846407928,
+        "Bus": 0.6070087609511889,
+        "Car": 0.7700879765395894,
+        "Train": 0.5508021390374332
+      }
+    },
+    {
+      "method": "xgboost",
+      "rate_seconds": 30,
+      "seed": 10086,
+      "test_fingerprint": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 116.07008004188538,
+      "accuracy": 0.7578947368421053,
+      "macro_f1": 0.70939790684884,
+      "per_class_f1": {
+        "Walk": 0.874485596707819,
+        "Bike": 0.7628361858190709,
+        "Bus": 0.6209624258404746,
+        "Car": 0.7719094602437608,
+        "Train": 0.5167958656330749
+      }
+    },
+    {
+      "method": "xgboost",
+      "rate_seconds": 60,
+      "seed": 10086,
+      "test_fingerprint": "5853138a48e7165d2f43089c1aadc4800b2b4f776a1a53e7f6cd07a08fa0a61f",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 112.56565308570862,
+      "accuracy": 0.6960146400976006,
+      "macro_f1": 0.6488303226615549,
+      "per_class_f1": {
+        "Walk": 0.8577405857740585,
+        "Bike": 0.6766561514195584,
+        "Bus": 0.5429808286951144,
+        "Car": 0.6939151813153043,
+        "Train": 0.47285886610373945
+      }
+    },
+    {
+      "method": "dabiri_cnn",
+      "rate_seconds": 5,
+      "seed": 10086,
+      "test_fingerprint": "6779e1f0686d4e7a0896080e88c806b23fe98ba0364febd32f9143e317d8d366",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 27.045495986938477,
+      "accuracy": 0.7818329278183292,
+      "macro_f1": 0.7372132911649785,
+      "per_class_f1": {
+        "Walk": 0.8509427250088936,
+        "Bike": 0.7697211155378485,
+        "Bus": 0.6366013071895424,
+        "Car": 0.8212927756653994,
+        "Train": 0.6075085324232082
+      }
+    },
+    {
+      "method": "dabiri_cnn",
+      "rate_seconds": 10,
+      "seed": 10086,
+      "test_fingerprint": "59c2c13a24fce42ebaa7a18acc28c5d09b0f92fa53f4ef7494ef187c187e2430",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 22.307191610336304,
+      "accuracy": 0.769277474195507,
+      "macro_f1": 0.7274880381426712,
+      "per_class_f1": {
+        "Walk": 0.855341506129597,
+        "Bike": 0.7386541471048512,
+        "Bus": 0.5994897959183674,
+        "Car": 0.805961910019321,
+        "Train": 0.6379928315412187
+      }
+    },
+    {
+      "method": "dabiri_cnn",
+      "rate_seconds": 20,
+      "seed": 10086,
+      "test_fingerprint": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 23.223191261291504,
+      "accuracy": 0.7645748987854251,
+      "macro_f1": 0.7114365204536477,
+      "per_class_f1": {
+        "Walk": 0.8505906879777623,
+        "Bike": 0.7156937073540561,
+        "Bus": 0.5915894511760513,
+        "Car": 0.806451612903226,
+        "Train": 0.5928571428571429
+      }
+    },
+    {
+      "method": "dabiri_cnn",
+      "rate_seconds": 30,
+      "seed": 10086,
+      "test_fingerprint": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 22.339551210403442,
+      "accuracy": 0.7204453441295546,
+      "macro_f1": 0.6650253391274712,
+      "per_class_f1": {
+        "Walk": 0.8484217828650712,
+        "Bike": 0.7055118110236219,
+        "Bus": 0.5613040396881644,
+        "Car": 0.7428083167188836,
+        "Train": 0.46708074534161487
+      }
+    },
+    {
+      "method": "dabiri_cnn",
+      "rate_seconds": 60,
+      "seed": 10086,
+      "test_fingerprint": "5853138a48e7165d2f43089c1aadc4800b2b4f776a1a53e7f6cd07a08fa0a61f",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 18.314887523651123,
+      "accuracy": 0.6789345262301749,
+      "macro_f1": 0.6250675218336815,
+      "per_class_f1": {
+        "Walk": 0.8440111420612812,
+        "Bike": 0.6558533145275035,
+        "Bus": 0.5396825396825397,
+        "Car": 0.6727217680896156,
+        "Train": 0.4130688448074679
+      }
+    },
+    {
+      "method": "deepinsight_vit",
+      "rate_seconds": 5,
+      "seed": 10086,
+      "test_fingerprint": "6779e1f0686d4e7a0896080e88c806b23fe98ba0364febd32f9143e317d8d366",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 214.94300055503845,
+      "accuracy": 0.7526358475263585,
+      "macro_f1": 0.7109729146836751,
+      "per_class_f1": {
+        "Walk": 0.8782816229116945,
+        "Bike": 0.7562189054726368,
+        "Bus": 0.5954022988505747,
+        "Car": 0.7559101654846336,
+        "Train": 0.5690515806988353
+      }
+    },
+    {
+      "method": "deepinsight_vit",
+      "rate_seconds": 10,
+      "seed": 10086,
+      "test_fingerprint": "59c2c13a24fce42ebaa7a18acc28c5d09b0f92fa53f4ef7494ef187c187e2430",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 260.6317126750946,
+      "accuracy": 0.763003440599069,
+      "macro_f1": 0.7125714196141342,
+      "per_class_f1": {
+        "Walk": 0.8635423845623708,
+        "Bike": 0.7550854353132629,
+        "Bus": 0.6371911573472041,
+        "Car": 0.7884174311926605,
+        "Train": 0.5186206896551725
+      }
+    },
+    {
+      "method": "deepinsight_vit",
+      "rate_seconds": 20,
+      "seed": 10086,
+      "test_fingerprint": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 158.82698512077332,
+      "accuracy": 0.7437246963562752,
+      "macro_f1": 0.6946972207455987,
+      "per_class_f1": {
+        "Walk": 0.8708036622583927,
+        "Bike": 0.7716933445661331,
+        "Bus": 0.6082887700534759,
+        "Car": 0.7501466275659824,
+        "Train": 0.47255369928400953
+      }
+    },
+    {
+      "method": "deepinsight_vit",
+      "rate_seconds": 30,
+      "seed": 10086,
+      "test_fingerprint": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 141.6630265712738,
+      "accuracy": 0.6880566801619433,
+      "macro_f1": 0.6398053667154314,
+      "per_class_f1": {
+        "Walk": 0.8619505494505495,
+        "Bike": 0.6911544227886057,
+        "Bus": 0.5792079207920792,
+        "Car": 0.6551615939755255,
+        "Train": 0.4115523465703971
+      }
+    },
+    {
+      "method": "deepinsight_vit",
+      "rate_seconds": 60,
+      "seed": 10086,
+      "test_fingerprint": "5853138a48e7165d2f43089c1aadc4800b2b4f776a1a53e7f6cd07a08fa0a61f",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 210.60991191864014,
+      "accuracy": 0.6935746238308256,
+      "macro_f1": 0.6429727815200234,
+      "per_class_f1": {
+        "Walk": 0.8564527260179434,
+        "Bike": 0.6821705426356589,
+        "Bus": 0.5558475689881734,
+        "Car": 0.6867137158637618,
+        "Train": 0.433679354094579
+      }
+    },
+    {
+      "method": "maso_msf",
+      "rate_seconds": 5,
+      "seed": 10086,
+      "test_fingerprint": "6779e1f0686d4e7a0896080e88c806b23fe98ba0364febd32f9143e317d8d366",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 50.90323066711426,
+      "accuracy": 0.7678426601784266,
+      "macro_f1": 0.7208136316058884,
+      "per_class_f1": {
+        "Walk": 0.809143686502177,
+        "Bike": 0.7925170068027212,
+        "Bus": 0.6393001345895021,
+        "Car": 0.8245379051701044,
+        "Train": 0.5385694249649369
+      }
+    },
+    {
+      "method": "maso_msf",
+      "rate_seconds": 10,
+      "seed": 10086,
+      "test_fingerprint": "59c2c13a24fce42ebaa7a18acc28c5d09b0f92fa53f4ef7494ef187c187e2430",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 34.4333233833313,
+      "accuracy": 0.7739324023477029,
+      "macro_f1": 0.7355699427676692,
+      "per_class_f1": {
+        "Walk": 0.8046732384081782,
+        "Bike": 0.7717041800643087,
+        "Bus": 0.637155297532656,
+        "Car": 0.8211009174311926,
+        "Train": 0.6432160804020101
+      }
+    },
+    {
+      "method": "maso_msf",
+      "rate_seconds": 20,
+      "seed": 10086,
+      "test_fingerprint": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 43.92926335334778,
+      "accuracy": 0.7461538461538462,
+      "macro_f1": 0.7017383306481241,
+      "per_class_f1": {
+        "Walk": 0.8492962581531068,
+        "Bike": 0.7443796835970026,
+        "Bus": 0.5584415584415584,
+        "Car": 0.7713651498335182,
+        "Train": 0.5852090032154342
+      }
+    },
+    {
+      "method": "maso_msf",
+      "rate_seconds": 30,
+      "seed": 10086,
+      "test_fingerprint": "b4ba542dccb88dd95c50ba94868def08245734bf84703ceafffeb917c517b803",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 31.484801530838013,
+      "accuracy": 0.7427125506072875,
+      "macro_f1": 0.6789977244660815,
+      "per_class_f1": {
+        "Walk": 0.8613188307273962,
+        "Bike": 0.7196110210696921,
+        "Bus": 0.5572207084468664,
+        "Car": 0.7705366922234391,
+        "Train": 0.48630136986301364
+      }
+    },
+    {
+      "method": "maso_msf",
+      "rate_seconds": 60,
+      "seed": 10086,
+      "test_fingerprint": "5853138a48e7165d2f43089c1aadc4800b2b4f776a1a53e7f6cd07a08fa0a61f",
+      "protocol_sha256": "04cd4e719c34a035c79e4eabeca9d28301908e3f32dbab30ef269c268048a1ac",
+      "runtime_seconds": 16.307506799697876,
+      "accuracy": 0.6870679137860919,
+      "macro_f1": 0.6320143697171087,
+      "per_class_f1": {
+        "Walk": 0.848297213622291,
+        "Bike": 0.6606606606606605,
+        "Bus": 0.5095709570957095,
+        "Car": 0.690876350540216,
+        "Train": 0.45066666666666666
+      }
+    }
+  ]
+}
