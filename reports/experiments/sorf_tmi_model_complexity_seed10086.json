@@ -1,0 +1,233 @@
+{
+  "protocol": "sorf-tmi-complexity-v1",
+  "device": "NVIDIA GeForce RTX 5070",
+  "pytorch_version": "2.7.1+cu128",
+  "cuda_runtime": "12.8",
+  "benchmark": {
+    "batch_size": 64,
+    "warmup": 40,
+    "iterations": 120,
+    "repeats": 5,
+    "inputs_resident_on_gpu": true,
+    "includes_data_loading": false,
+    "flop_counter": "torch.utils.flop_counter.FlopCounterMode"
+  },
+  "rates": [
+    {
+      "rate_seconds": 30,
+      "anchors": 11,
+      "seed": 10086,
+      "fusion": {
+        "b0_temperature": 1.6500000000000001,
+        "expert_temperature": 1.125,
+        "fusion_weight": 0.45
+      },
+      "input_shapes": {
+        "b0": [
+          [
+            64,
+            11,
+            2
+          ],
+          [
+            64,
+            11
+          ],
+          [
+            64,
+            11,
+            4
+          ],
+          [
+            64,
+            11
+          ]
+        ],
+        "relation_expert": [
+          [
+            64,
+            12,
+            11
+          ],
+          [
+            64,
+            11
+          ]
+        ]
+      },
+      "models": {
+        "b0": {
+          "parameters": 540937,
+          "trainable_parameters": 540937,
+          "model_tensor_mib": 2.1187705993652344,
+          "forward_flops_per_sample": 11047424,
+          "forward_gflops_per_sample": 0.011047424,
+          "benchmark_batch_size": 64,
+          "batch_latency_ms_median": 1.7273391723632812,
+          "batch_latency_ms_mean": 1.7358860270182292,
+          "batch_latency_ms_std": 0.06147817707700021,
+          "per_sample_latency_ms_median": 0.026989674568176268,
+          "throughput_samples_per_second": 37051.20628535135,
+          "peak_allocated_mib": 13.89501953125,
+          "latency_repeats_ms": [
+            1.8331512451171874,
+            1.7189338684082032,
+            1.6631103515625,
+            1.7273391723632812,
+            1.736895497639974
+          ]
+        },
+        "relation_expert": {
+          "parameters": 331497,
+          "trainable_parameters": 331497,
+          "model_tensor_mib": 1.2653999328613281,
+          "forward_flops_per_sample": 1686400,
+          "forward_gflops_per_sample": 0.0016864,
+          "benchmark_batch_size": 64,
+          "batch_latency_ms_median": 1.2609298706054688,
+          "batch_latency_ms_mean": 1.2552399444580078,
+          "batch_latency_ms_std": 0.010597281123479355,
+          "per_sample_latency_ms_median": 0.01970202922821045,
+          "throughput_samples_per_second": 50756.19310157884,
+          "peak_allocated_mib": 29.64306640625,
+          "latency_repeats_ms": [
+            1.2618235270182292,
+            1.2622596740722656,
+            1.237283706665039,
+            1.2539029439290366,
+            1.2609298706054688
+          ]
+        },
+        "sorf_tmi": {
+          "parameters": 872434,
+          "trainable_parameters": 872434,
+          "model_tensor_mib": 3.3841705322265625,
+          "forward_flops_per_sample": 12733824,
+          "forward_gflops_per_sample": 0.012733824,
+          "benchmark_batch_size": 64,
+          "batch_latency_ms_median": 2.8017547607421873,
+          "batch_latency_ms_mean": 2.8056045023600262,
+          "batch_latency_ms_std": 0.01636714444451795,
+          "per_sample_latency_ms_median": 0.04377741813659668,
+          "throughput_samples_per_second": 22842.827251249622,
+          "peak_allocated_mib": 31.80126953125,
+          "latency_repeats_ms": [
+            2.7894854227701824,
+            2.83192621866862,
+            2.7959520975748697,
+            2.8017547607421873,
+            2.808904012044271
+          ]
+        }
+      }
+    },
+    {
+      "rate_seconds": 60,
+      "anchors": 6,
+      "seed": 10086,
+      "fusion": {
+        "b0_temperature": 0.95,
+        "expert_temperature": 1.15,
+        "fusion_weight": 0.54
+      },
+      "input_shapes": {
+        "b0": [
+          [
+            64,
+            6,
+            2
+          ],
+          [
+            64,
+            6
+          ],
+          [
+            64,
+            6,
+            4
+          ],
+          [
+            64,
+            6
+          ]
+        ],
+        "relation_expert": [
+          [
+            64,
+            12,
+            6
+          ],
+          [
+            64,
+            6
+          ]
+        ]
+      },
+      "models": {
+        "b0": {
+          "parameters": 540937,
+          "trainable_parameters": 540937,
+          "model_tensor_mib": 2.1187705993652344,
+          "forward_flops_per_sample": 5995264,
+          "forward_gflops_per_sample": 0.005995264,
+          "benchmark_batch_size": 64,
+          "batch_latency_ms_median": 1.8632794698079427,
+          "batch_latency_ms_mean": 1.8917231241861978,
+          "batch_latency_ms_std": 0.080500190012326,
+          "per_sample_latency_ms_median": 0.029113741715749104,
+          "throughput_samples_per_second": 34348.041202105225,
+          "peak_allocated_mib": 12.681640625,
+          "latency_repeats_ms": [
+            1.8031932830810546,
+            1.8632794698079427,
+            1.958737309773763,
+            1.9926490783691406,
+            1.8407564798990885
+          ]
+        },
+        "relation_expert": {
+          "parameters": 331497,
+          "trainable_parameters": 331497,
+          "model_tensor_mib": 1.2647895812988281,
+          "forward_flops_per_sample": 653440,
+          "forward_gflops_per_sample": 0.00065344,
+          "benchmark_batch_size": 64,
+          "batch_latency_ms_median": 1.023800532023112,
+          "batch_latency_ms_mean": 1.0186197789510092,
+          "batch_latency_ms_std": 0.011016130729218598,
+          "per_sample_latency_ms_median": 0.015996883312861126,
+          "throughput_samples_per_second": 62512.17693111651,
+          "peak_allocated_mib": 15.08642578125,
+          "latency_repeats_ms": [
+            1.010915756225586,
+            1.0296653111775715,
+            1.0033834457397461,
+            1.0253338495890298,
+            1.023800532023112
+          ]
+        },
+        "sorf_tmi": {
+          "parameters": 872434,
+          "trainable_parameters": 872434,
+          "model_tensor_mib": 3.3835601806640625,
+          "forward_flops_per_sample": 6648704,
+          "forward_gflops_per_sample": 0.006648704,
+          "benchmark_batch_size": 64,
+          "batch_latency_ms_median": 2.8526336669921877,
+          "batch_latency_ms_mean": 2.8646319071451822,
+          "batch_latency_ms_std": 0.05194704305219588,
+          "per_sample_latency_ms_median": 0.04457240104675293,
+          "throughput_samples_per_second": 22435.40793216589,
+          "peak_allocated_mib": 17.236328125,
+          "latency_repeats_ms": [
+            2.8549891153971356,
+            2.8381131490071616,
+            2.8526336669921877,
+            2.9546440124511717,
+            2.822779591878255
+          ]
+        }
+      }
+    }
+  ]
+}
