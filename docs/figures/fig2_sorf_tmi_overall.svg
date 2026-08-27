@@ -1,59 +1,386 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="820" viewBox="0 0 1600 820">
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 Z" fill="#334155"/></marker>
-    <style>
-      .title{font:700 31px 'Microsoft YaHei','Noto Sans CJK SC',sans-serif;fill:#0f172a}.h{font:700 23px 'Microsoft YaHei','Noto Sans CJK SC',sans-serif;fill:#0f172a}.t{font:500 18px 'Microsoft YaHei','Noto Sans CJK SC',sans-serif;fill:#1e293b}.s{font:400 16px 'Microsoft YaHei','Noto Sans CJK SC',sans-serif;fill:#475569}.box{stroke-width:2;rx:16}.arr{stroke:#334155;stroke-width:3;fill:none;marker-end:url(#arrow)}
-    </style>
-  </defs>
-  <rect width="1600" height="820" fill="#ffffff"/>
-  <text x="800" y="48" text-anchor="middle" class="title">SORF-TMI总体框架</text>
-
-  <rect x="35" y="90" width="285" height="650" class="box" fill="#eff6ff" stroke="#3b82f6"/>
-  <text x="178" y="130" text-anchor="middle" class="h">低采样GPS输入</text>
-  <text x="178" y="165" text-anchor="middle" class="s">300 s固定物理窗口</text>
-  <text x="178" y="190" text-anchor="middle" class="s">5/10/20/30/60 s采样视图</text>
-  <polyline points="65,310 100,250 140,275 180,205 220,330 285,240" fill="none" stroke="#2563eb" stroke-width="4"/>
-  <g fill="#2563eb" stroke="#fff" stroke-width="2">
-    <circle cx="65" cy="310" r="8"/><circle cx="100" cy="250" r="8"/><circle cx="140" cy="275" r="8"/><circle cx="180" cy="205" r="8"/><circle cx="220" cy="330" r="8"/><circle cx="285" cy="240" r="8"/>
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="408.134988pt" height="221.976pt" viewBox="0 0 408.134988 221.976" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-08-27T11:06:09.870164</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>SORF-TMI reproducible figure generator</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 221.976
+L 408.134988 221.976
+L 408.134988 0
+L 0 0
+z
+" style="fill: #ffffff"/>
   </g>
-  <text x="178" y="370" text-anchor="middle" class="t">仅保留真实观测点</text>
-  <text x="178" y="400" text-anchor="middle" class="s">不生成插值坐标</text>
-  <rect x="72" y="445" width="212" height="70" rx="12" fill="#dbeafe" stroke="#60a5fa"/>
-  <text x="178" y="474" text-anchor="middle" class="t">轨迹序列 Xᵀ</text><text x="178" y="500" text-anchor="middle" class="s">经纬度 + 时间掩码</text>
-  <rect x="72" y="535" width="212" height="70" rx="12" fill="#dbeafe" stroke="#60a5fa"/>
-  <text x="178" y="564" text-anchor="middle" class="t">运动特征 Xᶠ</text><text x="178" y="590" text-anchor="middle" class="s">v / a / jerk / 转向率</text>
-  <rect x="72" y="625" width="212" height="70" rx="12" fill="#dbeafe" stroke="#60a5fa"/>
-  <text x="178" y="654" text-anchor="middle" class="t">真实观测集合 Xᴿ</text><text x="178" y="680" text-anchor="middle" class="s">点属性 + 时间关系</text>
-
-  <rect x="390" y="90" width="650" height="315" class="box" fill="#f0fdf4" stroke="#22c55e"/>
-  <text x="715" y="128" text-anchor="middle" class="h">基础专家 B0：噪声鲁棒双分支Transformer</text>
-  <rect x="430" y="175" width="245" height="145" rx="14" fill="#dcfce7" stroke="#4ade80" stroke-width="2"/>
-  <text x="552" y="215" text-anchor="middle" class="t">轨迹分支</text><text x="552" y="247" text-anchor="middle" class="s">4层Transformer</text><text x="552" y="277" text-anchor="middle" class="s">空间路径表示</text>
-  <rect x="755" y="175" width="245" height="145" rx="14" fill="#dcfce7" stroke="#4ade80" stroke-width="2"/>
-  <text x="878" y="215" text-anchor="middle" class="t">特征分支</text><text x="878" y="247" text-anchor="middle" class="s">1层Transformer</text><text x="878" y="277" text-anchor="middle" class="s">局部运动语义</text>
-  <path d="M675 247 L755 247" class="arr"/><text x="715" y="230" text-anchor="middle" class="s">融合</text>
-  <text x="715" y="365" text-anchor="middle" class="t">输出 logits oᴮ 与概率 pᴮ</text>
-
-  <rect x="390" y="435" width="650" height="305" class="box" fill="#fff7ed" stroke="#f97316"/>
-  <text x="715" y="474" text-anchor="middle" class="h">稀疏观测关系专家</text>
-  <rect x="425" y="520" width="170" height="120" rx="14" fill="#ffedd5" stroke="#fb923c" stroke-width="2"/>
-  <text x="510" y="555" text-anchor="middle" class="t">点Token</text><text x="510" y="586" text-anchor="middle" class="s">12维真实属性</text><text x="510" y="612" text-anchor="middle" class="s">MLP编码</text>
-  <rect x="625" y="520" width="180" height="120" rx="14" fill="#ffedd5" stroke="#fb923c" stroke-width="2"/>
-  <text x="715" y="555" text-anchor="middle" class="t">全点对关系</text><text x="715" y="586" text-anchor="middle" class="s">差分 + 时间间隔</text><text x="715" y="612" text-anchor="middle" class="s">关系MLP</text>
-  <rect x="835" y="520" width="170" height="120" rx="14" fill="#ffedd5" stroke="#fb923c" stroke-width="2"/>
-  <text x="920" y="555" text-anchor="middle" class="t">关系Transformer</text><text x="920" y="586" text-anchor="middle" class="s">2层 / 4头</text><text x="920" y="612" text-anchor="middle" class="s">统计池化</text>
-  <path d="M595 580 L625 580" class="arr"/><path d="M805 580 L835 580" class="arr"/>
-  <text x="715" y="694" text-anchor="middle" class="t">观测丢弃 + 一致性约束 → logits oᴿ 与概率 pᴿ</text>
-
-  <path d="M320 500 L390 250" class="arr"/><path d="M320 655 L390 590" class="arr"/>
-  <rect x="1110" y="175" width="440" height="475" class="box" fill="#faf5ff" stroke="#a855f7"/>
-  <text x="1330" y="220" text-anchor="middle" class="h">验证集约束的互补融合</text>
-  <rect x="1160" y="270" width="340" height="90" rx="14" fill="#f3e8ff" stroke="#c084fc" stroke-width="2"/>
-  <text x="1330" y="305" text-anchor="middle" class="t">温度校准</text><text x="1330" y="334" text-anchor="middle" class="s">pᴮ(Tᴮ), pᴿ(Tᴿ)</text>
-  <rect x="1160" y="400" width="340" height="100" rx="14" fill="#f3e8ff" stroke="#c084fc" stroke-width="2"/>
-  <text x="1330" y="438" text-anchor="middle" class="t">保守概率融合</text><text x="1330" y="470" text-anchor="middle" class="s">p = (1-w)pᴮ + wpᴿ</text>
-  <rect x="1160" y="545" width="340" height="65" rx="14" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
-  <text x="1330" y="586" text-anchor="middle" class="h">五类交通方式预测</text>
-  <path d="M1040 250 L1160 315" class="arr"/><path d="M1040 590 L1160 315" class="arr"/><path d="M1330 360 L1330 400" class="arr"/><path d="M1330 500 L1330 545" class="arr"/>
-  <text x="800" y="790" text-anchor="middle" class="s">训练阶段：B0与关系专家分别学习；推理阶段：仅使用验证集选择温度与融合权重，不访问测试标签</text>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 14.744268 177.150096
+L 68.580108 177.150096
+Q 74.204748 177.150096 74.204748 174.123072
+L 74.204748 41.366448
+Q 74.204748 38.339424 68.580108 38.339424
+L 14.744268 38.339424
+Q 9.119628 38.339424 9.119628 41.366448
+L 9.119628 174.123072
+Q 9.119628 177.150096 14.744268 177.150096
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #f5f7f9; stroke: #5f6b7a; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 22.377708 167.420376
+L 60.946668 167.420376
+Q 63.357228 167.420376 63.357228 166.12308
+L 63.357228 154.2312
+Q 63.357228 152.933904 60.946668 152.933904
+L 22.377708 152.933904
+Q 19.967148 152.933904 19.967148 154.2312
+L 19.967148 166.12308
+Q 19.967148 167.420376 22.377708 167.420376
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #ffffff; stroke: #5f6b7a; stroke-width: 0.7; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 103.131468 97.150176
+L 269.460107 97.150176
+Q 275.084747 97.150176 275.084747 94.123152
+L 275.084747 32.717808
+Q 275.084747 29.690784 269.460107 29.690784
+L 103.131468 29.690784
+Q 97.506828 29.690784 97.506828 32.717808
+L 97.506828 94.123152
+Q 97.506828 97.150176 103.131468 97.150176
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #eef6fa; stroke: #0072b2; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 123.219468 76.609656
+L 169.020107 76.609656
+Q 174.644747 76.609656 174.644747 73.582632
+L 174.644747 56.501568
+Q 174.644747 53.474544 169.020107 53.474544
+L 123.219468 53.474544
+Q 117.594828 53.474544 117.594828 56.501568
+L 117.594828 73.582632
+Q 117.594828 76.609656 123.219468 76.609656
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #ffffff; stroke: #0072b2; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 203.571468 76.609656
+L 249.372108 76.609656
+Q 254.996748 76.609656 254.996748 73.582632
+L 254.996748 56.501568
+Q 254.996748 53.474544 249.372108 53.474544
+L 203.571468 53.474544
+Q 197.946827 53.474544 197.946827 56.501568
+L 197.946827 73.582632
+Q 197.946827 76.609656 203.571468 76.609656
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #ffffff; stroke: #0072b2; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 103.131468 194.447376
+L 269.460107 194.447376
+Q 275.084747 194.447376 275.084747 191.420352
+L 275.084747 121.366368
+Q 275.084747 118.339344 269.460107 118.339344
+L 103.131468 118.339344
+Q 97.506828 118.339344 97.506828 121.366368
+L 97.506828 191.420352
+Q 97.506828 194.447376 103.131468 194.447376
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #fcf3ec; stroke: #d55e00; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 121.210668 163.096056
+L 156.967308 163.096056
+Q 162.591948 163.096056 162.591948 160.069032
+L 162.591948 145.150128
+Q 162.591948 142.123104 156.967308 142.123104
+L 121.210668 142.123104
+Q 115.586028 142.123104 115.586028 145.150128
+L 115.586028 160.069032
+Q 115.586028 163.096056 121.210668 163.096056
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #ffffff; stroke: #d55e00; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 169.421868 163.096056
+L 205.178508 163.096056
+Q 210.803148 163.096056 210.803148 160.069032
+L 210.803148 145.150128
+Q 210.803148 142.123104 205.178508 142.123104
+L 169.421868 142.123104
+Q 163.797228 142.123104 163.797228 145.150128
+L 163.797228 160.069032
+Q 163.797228 163.096056 169.421868 163.096056
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #ffffff; stroke: #d55e00; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 217.633068 163.096056
+L 253.389708 163.096056
+Q 259.014348 163.096056 259.014348 160.069032
+L 259.014348 145.150128
+Q 259.014348 142.123104 253.389708 142.123104
+L 217.633068 142.123104
+Q 212.008428 142.123104 212.008428 145.150128
+L 212.008428 160.069032
+Q 212.008428 163.096056 217.633068 163.096056
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #ffffff; stroke: #d55e00; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 312.046668 168.501456
+L 389.988108 168.501456
+Q 395.612748 168.501456 395.612748 165.474432
+L 395.612748 60.825888
+Q 395.612748 57.798864 389.988108 57.798864
+L 312.046668 57.798864
+Q 306.422028 57.798864 306.422028 60.825888
+L 306.422028 165.474432
+Q 306.422028 168.501456 312.046668 168.501456
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #f4eff7; stroke: #7a5195; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 324.099468 104.717736
+L 377.935308 104.717736
+Q 383.559948 104.717736 383.559948 101.690712
+L 383.559948 91.096128
+Q 383.559948 88.069104 377.935308 88.069104
+L 324.099468 88.069104
+Q 318.474828 88.069104 318.474828 91.096128
+L 318.474828 101.690712
+Q 318.474828 104.717736 324.099468 104.717736
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #ffffff; stroke: #7a5195; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 324.099468 132.825816
+L 377.935308 132.825816
+Q 383.559948 132.825816 383.559948 129.798792
+L 383.559948 117.042048
+Q 383.559948 114.015024 377.935308 114.015024
+L 324.099468 114.015024
+Q 318.474828 114.015024 318.474828 117.042048
+L 318.474828 129.798792
+Q 318.474828 132.825816 324.099468 132.825816
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #ffffff; stroke: #7a5195; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 324.099468 156.609576
+L 377.935308 156.609576
+Q 383.559948 156.609576 383.559948 153.582552
+L 383.559948 144.069048
+Q 383.559948 141.042024 377.935308 141.042024
+L 324.099468 141.042024
+Q 318.474828 141.042024 318.474828 144.069048
+L 318.474828 153.582552
+Q 318.474828 156.609576 324.099468 156.609576
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #7a5195; stroke: #7a5195; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_1">
+    <path d="M 21.574188 143.4204
+L 29.609388 121.7988
+L 37.644588 132.6096
+L 45.679788 98.01504
+L 53.714988 115.31232
+L 61.750188 85.04208
+" clip-path="url(#p0b4ecd452f)" style="fill: none; stroke: #5f6b7a; stroke-width: 1.2; stroke-linecap: square"/>
+   </g>
+   <g id="text_1">
+    <text style="fill: #1f2937; font: 600 9px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="41.662188" y="56.205034" transform="rotate(-0 41.662188 56.205034)">Low-rate GPS</text>
+   </g>
+   <g id="text_2">
+    <text style="fill: #667085; font: 7px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="41.662188" y="70.901546" transform="rotate(-0 41.662188 70.901546)">real observations only</text>
+   </g>
+   <g id="text_3">
+    <text style="fill: #667085; font: 7px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="41.662188" y="82.793426" transform="rotate(-0 41.662188 82.793426)">coordinates + motion</text>
+   </g>
+   <g id="text_4">
+    <text style="fill: #1f2937; font: 6.8px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="41.662188" y="162.161623" transform="rotate(-0 41.662188 162.161623)">validity masks</text>
+   </g>
+   <g id="text_5">
+    <text style="fill: #005a8d; font: 600 9.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="109.961388" y="47.708363" transform="rotate(-0 109.961388 47.708363)">Base expert B0</text>
+   </g>
+   <g id="text_6">
+    <text style="fill: #1f2937; font: 7.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="146.119788" y="67.136958" transform="rotate(-0 146.119788 67.136958)">Trajectory encoder</text>
+   </g>
+   <g id="text_7">
+    <text style="fill: #1f2937; font: 7.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="226.471788" y="67.136958" transform="rotate(-0 226.471788 67.136958)">Feature encoder</text>
+   </g>
+   <g id="text_8">
+    <text style="fill: #005a8d; font: 9px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="186.295788" y="67.633646" transform="rotate(-0 186.295788 67.633646)">+</text>
+   </g>
+   <g id="text_9">
+    <text style="fill: #1f2937; font: 7.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="186.295788" y="88.658433" transform="rotate(-0 186.295788 88.658433)">path + motion evidence  →  p_B</text>
+   </g>
+   <g id="text_10">
+    <text style="fill: #d55e00; font: 600 9px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="109.961388" y="135.123874" transform="rotate(-0 109.961388 135.123874)">Sparse-relation expert R</text>
+   </g>
+   <g id="text_11">
+    <text style="fill: #1f2937; font: 6.8px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="139.088988" y="154.594063" transform="rotate(-0 139.088988 154.594063)">Point MLP</text>
+   </g>
+   <g id="text_12">
+    <text style="fill: #1f2937; font: 6.8px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="187.300188" y="154.594063" transform="rotate(-0 187.300188 154.594063)">Relations</text>
+   </g>
+   <g id="text_13">
+    <text style="fill: #1f2937; font: 6.8px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="235.511388" y="154.594063" transform="rotate(-0 235.511388 154.594063)">Rel. encoder</text>
+   </g>
+   <g id="text_14">
+    <text style="fill: #1f2937; font: 7.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="186.295788" y="173.415105" transform="rotate(-0 186.295788 173.415105)">long-range relational evidence  →  p_R</text>
+   </g>
+   <g id="text_15">
+    <text style="fill: #667085; font: 6.7px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="186.295788" y="186.782653" transform="rotate(-0 186.295788 186.782653)">training regularization: point drop + consistency</text>
+   </g>
+   <g id="text_16">
+    <text style="fill: #7a5195; font: 600 8.8px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="351.017388" y="75.512505" transform="rotate(-0 351.017388 75.512505)">Validation fusion</text>
+   </g>
+   <g id="text_17">
+    <text style="fill: #1f2937; font: 7px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="351.017388" y="98.433091" transform="rotate(-0 351.017388 98.433091)">temperature scale</text>
+   </g>
+   <g id="text_18">
+    <text style="fill: #1f2937; font: 7.4px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="351.017388" y="125.570465" transform="rotate(-0 351.017388 125.570465)">p = (1−w) pB + w pR</text>
+   </g>
+   <g id="text_19">
+    <text style="fill: #ffffff; font: 600 7.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="351.017388" y="150.81255" transform="rotate(-0 351.017388 150.81255)">five-mode prediction</text>
+   </g>
+   <g id="text_20">
+    <text style="fill: #005a8d; font: 6.8px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="291.155147" y="77.47452" transform="rotate(-0 291.155147 77.47452)">p_B</text>
+   </g>
+   <g id="text_21">
+    <text style="fill: #d55e00; font: 6.8px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="291.155147" y="140.17716" transform="rotate(-0 291.155147 140.17716)">p_R</text>
+   </g>
+   <g id="text_22">
+    <text style="fill: #667085; font: 7px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="204.374988" y="211.297843" transform="rotate(-0 204.374988 211.297843)">Checkpoint selection, calibration and fusion use validation data only; test labels are never accessed.</text>
+   </g>
+   <g id="PathCollection_1">
+    <defs>
+     <path id="m3ffbb6ccae" d="M 0 2
+C 0.530406 2 1.03916 1.789267 1.414214 1.414214
+C 1.789267 1.03916 2 0.530406 2 0
+C 2 -0.530406 1.789267 -1.03916 1.414214 -1.414214
+C 1.03916 -1.789267 0.530406 -2 0 -2
+C -0.530406 -2 -1.03916 -1.789267 -1.414214 -1.414214
+C -1.789267 -1.03916 -2 -0.530406 -2 0
+C -2 0.530406 -1.789267 1.03916 -1.414214 1.414214
+C -1.03916 1.789267 -0.530406 2 0 2
+z
+" style="stroke: #ffffff; stroke-width: 0.5"/>
+    </defs>
+    <g clip-path="url(#p0b4ecd452f)">
+     <use xlink:href="#m3ffbb6ccae" x="21.574188" y="143.4204" style="fill: #5f6b7a; stroke: #ffffff; stroke-width: 0.5"/>
+     <use xlink:href="#m3ffbb6ccae" x="29.609388" y="121.7988" style="fill: #5f6b7a; stroke: #ffffff; stroke-width: 0.5"/>
+     <use xlink:href="#m3ffbb6ccae" x="37.644588" y="132.6096" style="fill: #5f6b7a; stroke: #ffffff; stroke-width: 0.5"/>
+     <use xlink:href="#m3ffbb6ccae" x="45.679788" y="98.01504" style="fill: #5f6b7a; stroke: #ffffff; stroke-width: 0.5"/>
+     <use xlink:href="#m3ffbb6ccae" x="53.714988" y="115.31232" style="fill: #5f6b7a; stroke: #ffffff; stroke-width: 0.5"/>
+     <use xlink:href="#m3ffbb6ccae" x="61.750188" y="85.04208" style="fill: #5f6b7a; stroke: #ffffff; stroke-width: 0.5"/>
+    </g>
+   </g>
+   <g id="patch_15">
+    <path d="M 162.179398 152.717688
+Q 163.192396 152.717688 163.310968 152.717688
+" clip-path="url(#p0b4ecd452f)" style="fill: none; stroke: #d55e00; stroke-width: 0.8; stroke-linecap: round"/>
+    <path d="M 160.110968 151.117688
+L 163.310968 152.717688
+L 160.110968 154.317688
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #d55e00; stroke: #d55e00; stroke-width: 0.8; stroke-linecap: round"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 210.390598 152.717688
+Q 211.403596 152.717688 211.522168 152.717688
+" clip-path="url(#p0b4ecd452f)" style="fill: none; stroke: #d55e00; stroke-width: 0.8; stroke-linecap: round"/>
+    <path d="M 208.322168 151.117688
+L 211.522168 152.717688
+L 208.322168 154.317688
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #d55e00; stroke: #d55e00; stroke-width: 0.8; stroke-linecap: round"/>
+   </g>
+   <g id="patch_17">
+    <path d="M 73.10388 94.342509
+Q 85.854371 79.638314 97.799156 65.86328
+" clip-path="url(#p0b4ecd452f)" style="fill: none; stroke: #0072b2; stroke-width: 1.1; stroke-linecap: round"/>
+    <path d="M 94.493911 67.232716
+L 97.799156 65.86328
+L 96.911558 69.329137
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #0072b2; stroke: #0072b2; stroke-width: 1.1; stroke-linecap: round"/>
+   </g>
+   <g id="patch_18">
+    <path d="M 73.321876 133.901565
+Q 85.855076 144.500878 97.449224 154.306037
+" clip-path="url(#p0b4ecd452f)" style="fill: none; stroke: #d55e00; stroke-width: 1.1; stroke-linecap: round"/>
+    <path d="M 96.039023 151.017977
+L 97.449224 154.306037
+L 93.972656 153.461361
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #d55e00; stroke: #d55e00; stroke-width: 1.1; stroke-linecap: round"/>
+   </g>
+   <g id="patch_19">
+    <path d="M 274.185937 66.89341
+Q 290.75327 81.258198 306.391407 94.817322
+" clip-path="url(#p0b4ecd452f)" style="fill: none; stroke: #0072b2; stroke-width: 1.1; stroke-linecap: round"/>
+    <path d="M 305.021823 91.512138
+L 306.391407 94.817322
+L 302.92551 93.929879
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #0072b2; stroke: #0072b2; stroke-width: 1.1; stroke-linecap: round"/>
+   </g>
+   <g id="patch_20">
+    <path d="M 274.057935 157.107504
+Q 290.754395 139.635566 306.601185 123.052762
+" clip-path="url(#p0b4ecd452f)" style="fill: none; stroke: #d55e00; stroke-width: 1.1; stroke-linecap: round"/>
+    <path d="M 303.233617 124.260853
+L 306.601185 123.052762
+L 305.547117 126.471671
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #d55e00; stroke: #d55e00; stroke-width: 1.1; stroke-linecap: round"/>
+   </g>
+   <g id="patch_21">
+    <path d="M 351.017388 105.420808
+Q 351.017388 109.364372 351.017388 112.413509
+" clip-path="url(#p0b4ecd452f)" style="fill: none; stroke: #7a5195; stroke-width: 0.8; stroke-linecap: round"/>
+    <path d="M 352.617388 109.213509
+L 351.017388 112.413509
+L 349.417388 109.213509
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #7a5195; stroke: #7a5195; stroke-width: 0.8; stroke-linecap: round"/>
+   </g>
+   <g id="patch_22">
+    <path d="M 351.017388 133.526512
+Q 351.017388 136.932439 351.017388 139.443938
+" clip-path="url(#p0b4ecd452f)" style="fill: none; stroke: #7a5195; stroke-width: 0.8; stroke-linecap: round"/>
+    <path d="M 352.617388 136.243938
+L 351.017388 139.443938
+L 349.417388 136.243938
+z
+" clip-path="url(#p0b4ecd452f)" style="fill: #7a5195; stroke: #7a5195; stroke-width: 0.8; stroke-linecap: round"/>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p0b4ecd452f">
+   <rect x="3.494988" y="2.88" width="401.76" height="216.216"/>
+  </clipPath>
+ </defs>
 </svg>

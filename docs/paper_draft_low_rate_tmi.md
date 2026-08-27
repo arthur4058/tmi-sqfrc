@@ -631,6 +631,7 @@ GeoLife GPS Trajectories 1.3由Microsoft Research公开。本文代码、数据�
 - 统一训练入口：`scripts/run_v74_five_rate_multiseed.py`
 - 复杂度测量入口：`scripts/measure_sorf_complexity.py`
 - 混淆矩阵生成入口：`scripts/generate_sorf_confusion_matrices.py`
+- 统一绘图入口：`scripts/generate_publication_figures.py`（同步输出 SVG 与 PDF）
 - 数据生成入口：`scripts/generate_five_rate_matched_dataset.sh`
 
 ## 附录B 初稿数据使用边界
