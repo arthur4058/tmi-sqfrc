@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 from pathlib import Path
 
 import matplotlib
@@ -17,7 +16,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Rectangle
 
 
@@ -321,7 +319,7 @@ def figure_overall_framework(output_dir: Path, preview_dir: Path | None) -> None
     arrow(axis, (0.390, 0.307), (0.405, 0.307), color=ORANGE, linewidth=0.8)
     arrow(axis, (0.510, 0.307), (0.525, 0.307), color=ORANGE, linewidth=0.8)
     axis.text(0.455, 0.220, "long-range relational evidence  →  p_R", transform=axis.transAxes, ha="center", va="center", fontsize=7.2, color=INK)
-    axis.text(0.455, 0.158, "training regularization: point drop + consistency", transform=axis.transAxes, ha="center", va="center", fontsize=6.7, color=MUTED)
+    axis.text(0.455, 0.158, "all-pair relations over real observations", transform=axis.transAxes, ha="center", va="center", fontsize=6.7, color=MUTED)
 
     # Validation-controlled fusion.
     rounded_box(axis, 0.76, 0.24, 0.21, 0.50, LIGHT_PURPLE, PURPLE)
@@ -402,7 +400,7 @@ def figure_relation_encoder(output_dir: Path, preview_dir: Path | None) -> None:
     axis.text(
         0.5,
         0.103,
-        "No coordinate interpolation   |   Long-range relations from real observations   |   Training regularized by point dropping and consistency",
+        "No coordinate interpolation   |   Long-range relations from real observations",
         transform=axis.transAxes,
         ha="center",
         va="center",
@@ -413,23 +411,41 @@ def figure_relation_encoder(output_dir: Path, preview_dir: Path | None) -> None:
 
 
 def load_main_results() -> list[dict]:
-    path = ROOT / "reports/experiments/geolife_v74_five_rate_multiseed.json"
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    selected = [row for row in payload["results"] if row["seed"] == 10086]
-    selected.sort(key=lambda row: row["rate_seconds"])
-    if [row["rate_seconds"] for row in selected] != [5, 10, 20, 30, 60]:
-        raise AssertionError("seed10086 five-rate results are incomplete")
-    return selected
+    historical_path = ROOT / "reports/experiments/geolife_v74_five_rate_multiseed.json"
+    pruning_path = ROOT / "reports/experiments/sorf_component_pruning_validation.json"
+    historical = json.loads(historical_path.read_text(encoding="utf-8"))
+    pruning = json.loads(pruning_path.read_text(encoding="utf-8"))
+    baseline = {
+        row["rate_seconds"]: row["test"]["b0"]
+        for row in historical["results"]
+        if row["seed"] == 10086
+    }
+    final = {
+        row["rate_seconds"]: row
+        for row in pruning["five_rate_seed10086"]
+    }
+    rates = [5, 10, 20, 30, 60]
+    if sorted(baseline) != rates or sorted(final) != rates:
+        raise AssertionError("final five-rate results are incomplete")
+    return [
+        {
+            "rate_seconds": rate,
+            "b0": baseline[rate],
+            "final_accuracy": final[rate]["pruned_accuracy"],
+            "final_macro_f1": final[rate]["pruned_macro_f1"],
+        }
+        for rate in rates
+    ]
 
 
 def figure_main_results(output_dir: Path, preview_dir: Path | None) -> None:
     rows = load_main_results()
     rates = np.array([row["rate_seconds"] for row in rows])
     x = np.arange(len(rates))
-    b0_acc = np.array([100 * row["test"]["b0"]["accuracy"] for row in rows])
-    sorf_acc = np.array([100 * row["test"]["v74"]["accuracy"] for row in rows])
-    b0_f1 = np.array([100 * row["test"]["b0"]["macro_f1"] for row in rows])
-    sorf_f1 = np.array([100 * row["test"]["v74"]["macro_f1"] for row in rows])
+    b0_acc = np.array([100 * row["b0"]["accuracy"] for row in rows])
+    sorf_acc = np.array([100 * row["final_accuracy"] for row in rows])
+    b0_f1 = np.array([100 * row["b0"]["macro_f1"] for row in rows])
+    sorf_f1 = np.array([100 * row["final_macro_f1"] for row in rows])
 
     figure, axes = plt.subplots(1, 2, figsize=(7.2, 2.85))
     panels = [
@@ -465,113 +481,11 @@ def figure_main_results(output_dir: Path, preview_dir: Path | None) -> None:
     save_figure(figure, output_dir / "fig4_five_rate_results.svg", preview_dir)
 
 
-def load_confusion_results() -> dict:
-    path = ROOT / "reports/experiments/sorf_tmi_confusion_30s_60s_seed10086.json"
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def annotate_heatmap(axis, values: np.ndarray, limit: float | None = None) -> None:
-    threshold = 58.0 if limit is None else 0.52 * limit
-    for row in range(values.shape[0]):
-        for column in range(values.shape[1]):
-            value = values[row, column]
-            label = f"{value:.1f}" if limit is None else f"{value:+.1f}"
-            color = WHITE if abs(value) >= threshold else INK
-            axis.text(column, row, label, ha="center", va="center", fontsize=7.1, color=color)
-
-
-def figure_confusion_matrices(output_dir: Path, preview_dir: Path | None) -> None:
-    payload = load_confusion_results()
-    classes = payload["class_names"]
-    cmap = LinearSegmentedColormap.from_list(
-        "paper_blues", ["#F7FAFC", "#D8EAF3", "#8FC2DA", "#2F7FB6", "#0B3C5D"]
-    )
-    figure, axes = plt.subplots(2, 2, figsize=(7.2, 5.25))
-    image = None
-    panel = 0
-    for row_index, result in enumerate(payload["results"]):
-        for column_index, model in enumerate(("b0", "sorf_tmi")):
-            axis = axes[row_index, column_index]
-            values = 100 * np.asarray(result["matrices"][model]["row_normalized"])
-            image = axis.imshow(values, vmin=0, vmax=100, cmap=cmap, aspect="equal")
-            annotate_heatmap(axis, values)
-            model_label = "B0" if model == "b0" else "SORF-TMI"
-            axis.set_title(
-                f"({chr(97 + panel)}) {result['rate_seconds']} s — {model_label}",
-                loc="left",
-                fontweight="semibold",
-                color=INK,
-                pad=6,
-            )
-            panel += 1
-            axis.set_xticks(np.arange(len(classes)), classes, rotation=25, ha="right")
-            axis.set_yticks(np.arange(len(classes)), classes)
-            axis.tick_params(length=0)
-            if row_index == 1:
-                axis.set_xlabel("Predicted class")
-            if column_index == 0:
-                axis.set_ylabel("True class")
-            else:
-                axis.set_yticklabels([])
-            for spine in axis.spines.values():
-                spine.set_color(WHITE)
-                spine.set_linewidth(1.2)
-            axis.set_xticks(np.arange(-0.5, len(classes), 1), minor=True)
-            axis.set_yticks(np.arange(-0.5, len(classes), 1), minor=True)
-            axis.grid(which="minor", color=WHITE, linewidth=1.0)
-            axis.tick_params(which="minor", bottom=False, left=False)
-    colorbar = figure.colorbar(image, ax=axes, fraction=0.028, pad=0.025)
-    colorbar.set_label("Within-class proportion (%)")
-    colorbar.outline.set_linewidth(0.6)
-    figure.subplots_adjust(left=0.10, right=0.91, bottom=0.10, top=0.95, wspace=0.10, hspace=0.34)
-    save_figure(figure, output_dir / "fig5_confusion_matrices.svg", preview_dir)
-
-
-def figure_confusion_delta(output_dir: Path, preview_dir: Path | None) -> None:
-    payload = load_confusion_results()
-    classes = payload["class_names"]
-    matrices = [100 * np.asarray(result["row_normalized_delta"]) for result in payload["results"]]
-    limit = math.ceil(max(float(np.abs(matrix).max()) for matrix in matrices))
-    cmap = LinearSegmentedColormap.from_list(
-        "paper_diverging", ["#B2182B", "#EF8A8C", "#F7F7F7", "#8FC2DA", "#0B5A8C"]
-    )
-    figure, axes = plt.subplots(1, 2, figsize=(7.2, 2.95))
-    image = None
-    for index, (axis, result, values) in enumerate(zip(axes, payload["results"], matrices)):
-        image = axis.imshow(values, vmin=-limit, vmax=limit, cmap=cmap, aspect="equal")
-        annotate_heatmap(axis, values, limit=float(limit))
-        axis.set_title(
-            f"({chr(97 + index)}) {result['rate_seconds']} s: SORF-TMI − B0",
-            loc="left",
-            fontweight="semibold",
-            color=INK,
-            pad=6,
-        )
-        axis.set_xticks(np.arange(len(classes)), classes, rotation=25, ha="right")
-        axis.set_yticks(np.arange(len(classes)), classes if index == 0 else [])
-        axis.set_xlabel("Predicted class")
-        if index == 0:
-            axis.set_ylabel("True class")
-        axis.tick_params(length=0)
-        for diagonal in range(len(classes)):
-            axis.add_patch(Rectangle((diagonal - 0.49, diagonal - 0.49), 0.98, 0.98, facecolor="none", edgecolor=INK, linewidth=0.65))
-        axis.set_xticks(np.arange(-0.5, len(classes), 1), minor=True)
-        axis.set_yticks(np.arange(-0.5, len(classes), 1), minor=True)
-        axis.grid(which="minor", color=WHITE, linewidth=1.0)
-        axis.tick_params(which="minor", bottom=False, left=False)
-        for spine in axis.spines.values():
-            spine.set_color(WHITE)
-            spine.set_linewidth(1.2)
-    colorbar = figure.colorbar(image, ax=axes, fraction=0.035, pad=0.03)
-    colorbar.set_label("Change (percentage points)")
-    colorbar.outline.set_linewidth(0.6)
-    figure.subplots_adjust(left=0.10, right=0.90, bottom=0.22, top=0.90, wspace=0.18)
-    save_figure(figure, output_dir / "fig6_confusion_delta.svg", preview_dir)
-
-
 def load_ablation() -> dict:
     path = ROOT / "reports/experiments/geolife_v74_ablation_30s_60s.json"
-    return json.loads(path.read_text(encoding="utf-8"))
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["variants"] = payload["variants"][:3]
+    return payload
 
 
 def figure_ablation(output_dir: Path, preview_dir: Path | None) -> None:
@@ -579,8 +493,8 @@ def figure_ablation(output_dir: Path, preview_dir: Path | None) -> None:
     variants = payload["variants"]
     ids = [variant["id"] for variant in variants]
     x = np.arange(len(ids))
-    colors = [GREY, "#AAB2BD", "#8FC2DA", "#4D9BC4", BLUE]
-    hatches = ["", "//", "", "..", ""]
+    colors = [GREY, "#AAB2BD", BLUE]
+    hatches = ["", "//", ""]
     figure, axes = plt.subplots(1, 2, figsize=(7.2, 2.85), sharey=True)
     for index, (axis, rate) in enumerate(zip(axes, (30, 60))):
         values = np.array([100 * variant["rates"][str(rate)]["macro_f1"] for variant in variants])
@@ -590,7 +504,7 @@ def figure_ablation(output_dir: Path, preview_dir: Path | None) -> None:
         for xi, value in zip(x, values):
             axis.text(xi, value + 0.25, f"{value:.2f}", ha="center", va="bottom", fontsize=6.8, color=INK)
         axis.set_title(f"({chr(97 + index)}) {rate} s", loc="left", fontweight="semibold", color=INK)
-        axis.set_xticks(x, ["B0", "A1", "A2", "A3", "A4\n(full)"])
+        axis.set_xticks(x, ["B0", "A1\nRelation", "A2\nFinal"])
         axis.set_xlabel("Ablation variant")
         axis.set_ylim(60, 73)
         axis.set_yticks([60, 64, 68, 72])
@@ -600,14 +514,14 @@ def figure_ablation(output_dir: Path, preview_dir: Path | None) -> None:
     figure.text(
         0.5,
         0.03,
-        "A1: relational expert   A2: A1 + B0 fusion   A3: A2 + observation drop   A4: A3 + consistency",
+        "A1: relational expert only   |   A2: B0 + relational expert + validation-constrained fusion (final)",
         ha="center",
         va="bottom",
         fontsize=7.0,
         color=MUTED,
     )
     figure.subplots_adjust(left=0.075, right=0.99, bottom=0.27, top=0.91, wspace=0.18)
-    save_figure(figure, output_dir / "fig7_ablation.svg", preview_dir)
+    save_figure(figure, output_dir / "fig5_ablation.svg", preview_dir)
 
 
 def main() -> None:
@@ -624,8 +538,6 @@ def main() -> None:
         figure_overall_framework,
         figure_relation_encoder,
         figure_main_results,
-        figure_confusion_matrices,
-        figure_confusion_delta,
         figure_ablation,
     ]
     for generator in generators:
